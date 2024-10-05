@@ -20,7 +20,7 @@ fn main() {
         .init_state(None, MyState::Enabled)
         .observe(reexit_observer)
         .observe(enter_observer)
-        .add_systems(Update, toggle_logo)
+        .add_systems(Update, user_input)
         .run();
 }
 
@@ -32,7 +32,7 @@ enum MyState {
 }
 
 /// User controls.
-fn toggle_logo(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
+fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
     if input.just_pressed(KeyCode::Digit1) {
         commands.update_state(None, MyState::Enabled);
     }

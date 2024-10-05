@@ -12,9 +12,10 @@ use bevy_utils::tracing::warn;
 
 use crate::{
     components::{RegisteredState, StateData},
-    system_set::{StateSystemSet, StateTransition},
+    config::StateConfig,
+    state_scoped::despawn_state_scoped,
     state_set::{StateDependencies, StateSet},
-    transitions::StateConfig,
+    system_set::{StateSystemSet, StateTransition},
 };
 
 /// Types that exhibit state-like behavior.
@@ -30,6 +31,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
     type Repr: StateRepr<State = Self>;
 
     /// State update order in transition graph.
+    /// Never manually overwrite, always use the derived value.
     const ORDER: u32 = Self::Dependencies::HIGHEST_ORDER + 1;
 
     /// Update function of this state.
@@ -38,29 +40,23 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         -> Self::Repr;
 
     /// Registers machinery for this state to work correctly.
-    fn register_state(world: &mut World, transitions: StateConfig<Self>, recursive: bool) {
-        Self::Dependencies::register_required_states(world);
-
+    fn register_state(world: &mut World, config: StateConfig<Self>) {
         match world
             .query_filtered::<(), With<RegisteredState<Self>>>()
             .get_single(world)
         {
             Ok(_) => {
-                // Skip warnings from recursive registers.
-                if !recursive {
-                    warn!(
-                        "State {} is already registered, additional configuration will be ignored.",
-                        disqualified::ShortName::of::<Self>()
-                    );
-                }
-                return;
-            }
-            Err(QuerySingleError::MultipleEntities(_)) => {
                 warn!(
-                    "Failed to register state {}, edge already registered multiple times.",
+                    "State {} is already registered.",
                     disqualified::ShortName::of::<Self>()
                 );
                 return;
+            }
+            Err(QuerySingleError::MultipleEntities(_)) => {
+                panic!(
+                    "Found multiple {} state registrations which is invalid.",
+                    disqualified::ShortName::of::<Self>()
+                );
             }
             Err(QuerySingleError::NoEntities(_)) => {}
         }
@@ -73,8 +69,12 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         schedule.configure_sets(StateSystemSet::configuration::<Self>());
         schedule
             .add_systems(Self::update_state_data_system.in_set(StateSystemSet::update::<Self>()));
-        for system in transitions.systems {
+        for system in config.systems {
             schedule.add_systems(system);
+        }
+        if config.state_scoped {
+            schedule
+                .add_systems(despawn_state_scoped::<Self>.in_set(StateSystemSet::exit::<Self>()));
         }
     }
 
@@ -96,7 +96,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 }
 
 /// Types that store state update data.
-/// Implemented by by default for
+/// Implemented by by default for:
 /// - [`()`] - states with no manual updates,
 /// - [`Option<S>`] - states with manual updates,
 /// - [`Option<Option<S>>`] - optional states with manual updates.

@@ -6,11 +6,10 @@ use bevy_ecs::{
     component::{ComponentId, Components, RequiredComponents},
     query::{QueryData, WorldQuery},
     storage::Storages,
-    world::World,
 };
 use bevy_utils::all_tuples;
 
-use crate::{components::StateData, state::State, transitions::StateConfig};
+use crate::{components::StateData, state::State};
 
 /// Shorthand for arguments provided to state `update` function.
 pub type StateDependencies<'a, S> =
@@ -35,10 +34,6 @@ pub trait StateSet {
         inheritance_depth: u16,
     );
 
-    /// Registers all states in the set in the world.
-    /// Default state configuration is used.
-    fn register_required_states(world: &mut World);
-
     /// Returns whether any of the dependencies changed.
     fn is_changed(set: &<Self::Data as WorldQuery>::Item<'_>) -> bool;
 }
@@ -61,10 +56,6 @@ impl<S1: State> StateSet for S1 {
         inheritance_depth: u16,
     ) {
         required_components.register(components, storages, missing_state::<S1>, inheritance_depth);
-    }
-
-    fn register_required_states(world: &mut World) {
-        S1::register_state(world, StateConfig::default(), true);
     }
 
     fn is_changed(s1: &<Self::Data as WorldQuery>::Item<'_>) -> bool {
@@ -106,10 +97,6 @@ macro_rules! impl_state_set {
                 _inheritance_depth: u16,
             ) {
                 $(_required_components.register(_components, _storages, missing_state::<$type>, _inheritance_depth);)*
-            }
-
-            fn register_required_states(_world: &mut World) {
-                $($type::register_state(_world, StateConfig::default(), true);)*
             }
 
             fn is_changed(($($var,)*): &<Self::Data as WorldQuery>::Item<'_>) -> bool {

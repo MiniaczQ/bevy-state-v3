@@ -20,7 +20,7 @@ fn main() {
         // Because we're not using transition events or state hierarchy, update suppresion doesn't matter.
         .init_state(None, LogoState::Enabled)
         .add_systems(Startup, setup)
-        .add_systems(Update, toggle_logo)
+        .add_systems(Update, user_input)
         .add_systems(
             Update,
             // We can use global state to determine when certain systems run.
@@ -37,7 +37,7 @@ enum LogoState {
 }
 
 /// User controls.
-fn toggle_logo(
+fn user_input(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
     state: Global<&StateData<LogoState>>,

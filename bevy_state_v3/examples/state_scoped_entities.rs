@@ -1,4 +1,6 @@
-//! This example shows how to use hierarchy made of multiple states; a root state and it's substate.
+//! This example shows how to use the most basic global state machine.
+//! The machine consists of a single state type that decides
+//! whether a logo moves around the screen and changes color.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;
@@ -9,102 +11,34 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        .register_state::<LogoState>(StateConfig::empty())
-        .register_state::<CycleColorState>(StateConfig::empty())
-        .init_state(None, LogoState::Enabled)
-        .init_state(None, Some(CycleColorState::Enabled))
+        .register_state::<MyState>(StateConfig::empty().with_state_scoped())
+        .init_state(None, MyState::Enabled)
         .add_systems(Startup, setup)
-        .add_systems(Update, user_input)
         .add_systems(
             Update,
             (
-                bounce_around.run_if(in_state(LogoState::Enabled)),
-                cycle_color.run_if(in_state(Some(CycleColorState::Enabled))),
-            ),
+                user_input,
+                (spawn_logos, bounce_around, cycle_color).run_if(in_state(MyState::Enabled)),
+            )
+                .chain(),
         )
         .run();
 }
 
 #[derive(State, Default, PartialEq, Debug, Clone)]
-enum LogoState {
+enum MyState {
     #[default]
     Enabled,
     Disabled,
-}
-
-#[derive(Default, PartialEq, Debug, Clone)]
-enum CycleColorState {
-    #[default]
-    Enabled,
-    Disabled,
-}
-
-impl State for CycleColorState {
-    type Dependencies = LogoState;
-    type Update = PersistentUpdate<Self>;
-    type Repr = Option<Self>;
-
-    fn update(state: &mut StateData<Self>, logo: StateDependencies<'_, Self>) -> Self::Repr {
-        match (logo.current(), &state.target().value) {
-            (LogoState::Enabled, value) => Some(value.clone()),
-            (LogoState::Disabled, _) => None,
-        }
-    }
-}
-
-#[derive(Default, Debug)]
-struct PersistentUpdate<S: State> {
-    should_update: bool,
-    value: S,
-}
-
-impl<S: State + Default> StateUpdate for PersistentUpdate<S> {
-    fn should_update(&self) -> bool {
-        self.should_update
-    }
-
-    fn post_update(&mut self) {
-        self.should_update = false;
-    }
-}
-
-impl<S: State> From<S> for PersistentUpdate<S> {
-    fn from(value: S) -> Self {
-        PersistentUpdate {
-            should_update: true,
-            value,
-        }
-    }
 }
 
 /// User controls.
-fn user_input(
-    mut commands: Commands,
-    input: Res<ButtonInput<KeyCode>>,
-    state: Global<(&StateData<LogoState>, &StateData<CycleColorState>)>,
-) {
-    let (logo_state, cycle_color_state) = *state;
-
+fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
     if input.just_pressed(KeyCode::Digit1) {
-        // Decide the next state based on current state.
-        let next = match logo_state.current() {
-            LogoState::Enabled => LogoState::Disabled,
-            LogoState::Disabled => LogoState::Enabled,
-        };
-        // Request a change for the state.
-        commands.update_state(None, next);
+        commands.update_state(None, MyState::Enabled);
     }
-
     if input.just_pressed(KeyCode::Digit2) {
-        match cycle_color_state.current() {
-            Some(CycleColorState::Enabled) => {
-                commands.update_state(None, CycleColorState::Disabled);
-            }
-            Some(CycleColorState::Disabled) => {
-                commands.update_state(None, CycleColorState::Enabled);
-            }
-            None => {}
-        };
+        commands.update_state(None, MyState::Disabled);
     }
 }
 
@@ -116,9 +50,24 @@ const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
 struct Velocity(Vec2);
 
 /// Create the camera and logo.
-fn setup(mut commands: Commands, assets: Res<AssetServer>) {
+fn setup(mut commands: Commands) {
     // Add camera.
     commands.spawn(Camera2d);
+}
+
+/// Spawns a new logo every 3 seconds.
+fn spawn_logos(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    time: Res<Time>,
+    mut timer: Local<Option<Timer>>,
+) {
+    let timer = timer.get_or_insert_with(|| Timer::from_seconds(1.0, TimerMode::Repeating));
+    timer.tick(time.delta());
+
+    if !timer.finished() {
+        return;
+    }
 
     // Create logo with random position and velocity.
     let mut rng = rand::thread_rng();
@@ -139,6 +88,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ..default()
         },
         Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
+        StateScoped::<MyState>(MyState::Enabled),
     ));
 }
 

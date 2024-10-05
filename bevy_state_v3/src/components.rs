@@ -16,8 +16,7 @@ pub struct StateData<S: State> {
     pub(crate) is_reentrant: bool,
 
     /// Last different state value.
-    /// This will be identical to `current` after initialization.
-    pub(crate) previous: S::Repr,
+    pub(crate) previous: Option<S::Repr>,
 
     /// Current value of the state.
     pub(crate) current: S::Repr,
@@ -74,7 +73,7 @@ impl<S: State> StateData<S> {
             self.is_reentrant = true;
         } else {
             self.is_reentrant = false;
-            self.previous = core::mem::replace(&mut self.current, next);
+            self.previous = Some(core::mem::replace(&mut self.current, next));
         }
         self.is_updated = true;
     }
@@ -83,7 +82,7 @@ impl<S: State> StateData<S> {
     pub fn new(initial: S::Repr) -> Self {
         Self {
             current: initial.clone(),
-            previous: initial,
+            previous: None,
             is_updated: false,
             is_reentrant: true,
             waker: S::Update::default(),
@@ -98,14 +97,14 @@ impl<S: State> StateData<S> {
     /// Returns the last different state.
     /// If the current state was reentered, this value will remain unchanged,
     /// instead the [`Self::is_reentrant()`] flag will be raised.
-    pub fn previous(&self) -> &S::Repr {
-        &self.previous
+    pub fn previous(&self) -> Option<&S::Repr> {
+        self.previous.as_ref()
     }
 
     /// Returns the previous state with reentries included.
-    pub fn reentrant_previous(&self) -> &S::Repr {
+    pub fn reentrant_previous(&self) -> Option<&S::Repr> {
         if self.is_reentrant {
-            self.current()
+            Some(self.current())
         } else {
             self.previous()
         }

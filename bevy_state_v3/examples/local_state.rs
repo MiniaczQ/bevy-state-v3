@@ -16,7 +16,7 @@ fn main() {
         // By providing an empty config we opt-out of state transition events.
         .register_state::<LogoState>(StateConfig::empty())
         .add_systems(Startup, setup)
-        .add_systems(Update, toggle_logo)
+        .add_systems(Update, user_input)
         // Because we are using local state, we cannot use global state to control whether the systems should run.
         // Each entity has to check it's own state and make the decision.
         .add_systems(Update, (bounce_around, cycle_color))
@@ -30,7 +30,7 @@ enum LogoState {
 }
 
 /// User controls.
-fn toggle_logo(
+fn user_input(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
     logos: Populated<(Entity, &StateData<LogoState>, &ToggleOn)>,

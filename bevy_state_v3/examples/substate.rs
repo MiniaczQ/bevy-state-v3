@@ -14,7 +14,7 @@ fn main() {
         .init_state(None, LogoState::Enabled)
         .init_state(None, Some(CycleColorState::Enabled))
         .add_systems(Startup, setup)
-        .add_systems(Update, toggle_logo)
+        .add_systems(Update, user_input)
         .add_systems(
             Update,
             (
@@ -41,7 +41,7 @@ enum CycleColorState {
 }
 
 /// User controls.
-fn toggle_logo(
+fn user_input(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
     state: Global<(&StateData<LogoState>, &StateData<CycleColorState>)>,

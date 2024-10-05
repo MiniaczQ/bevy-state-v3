@@ -1,67 +1,13 @@
 //! Built-in state transitions.
 
-use std::marker::PhantomData;
-
 use bevy_ecs::{
     entity::Entity,
     event::Event,
     query::Has,
-    schedule::{IntoSystemConfigs, SystemConfigs},
     system::{Commands, Populated},
 };
 
-use crate::{components::StateData, system_set::StateSystemSet, state::State, util::GlobalMarker};
-
-/// State registration configuration.
-/// Currently only transitions can be configured.
-/// Configuration is only applied when registering state for the first time.
-pub struct StateConfig<S: State> {
-    pub(crate) systems: Vec<SystemConfigs>,
-    _state: PhantomData<S>,
-}
-
-impl<S: State> Default for StateConfig<S> {
-    fn default() -> Self {
-        Self {
-            systems: vec![
-                on_exit_transition::<S>
-                    .in_set(StateSystemSet::exit::<S>())
-                    .into(),
-                on_enter_transition::<S>
-                    .in_set(StateSystemSet::enter::<S>())
-                    .into(),
-            ],
-            _state: Default::default(),
-        }
-    }
-}
-
-impl<S: State> StateConfig<S> {
-    /// Config that creates no transitions.
-    /// For standard [`OnExit`] and [`OnEnter`] use the [`StateTransitionsConfig::default`].
-    pub fn empty() -> Self {
-        Self {
-            systems: vec![],
-            _state: PhantomData,
-        }
-    }
-
-    /// Adds a system to run when state is exited.
-    /// An example system that runs [`OnExit`] is [`on_exit_transition`].
-    pub fn with_on_exit<M>(mut self, system: impl IntoSystemConfigs<M>) -> Self {
-        self.systems
-            .push(system.in_set(StateSystemSet::exit::<S>()));
-        self
-    }
-
-    /// Adds a system to run when state is entered.
-    /// An example system that runs [`OnEnter`] is [`on_enter_transition`].
-    pub fn with_on_enter<M>(mut self, system: impl IntoSystemConfigs<M>) -> Self {
-        self.systems
-            .push(system.in_set(StateSystemSet::enter::<S>()));
-        self
-    }
-}
+use crate::{components::StateData, state::State, util::GlobalMarker};
 
 /// Event triggered when a state is exited.
 /// Reentrant transitions are ignored.
@@ -90,10 +36,10 @@ pub fn on_exit_transition<S: State>(
             continue;
         }
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(
-            OnExit::<S>::new(state.previous().clone(), state.current().clone()),
-            target,
-        );
+        // Guaranteed to exist.
+        let previous = state.previous().unwrap().clone();
+        let current = state.current().clone();
+        commands.trigger_targets(OnExit::<S>::new(previous, current), target);
     }
 }
 
@@ -124,10 +70,10 @@ pub fn on_enter_transition<S: State>(
             continue;
         }
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(
-            OnEnter::<S>::new(state.previous().clone(), state.current().clone()),
-            target,
-        );
+        // Guaranteed to exist.
+        let previous = state.previous().unwrap().clone();
+        let current = state.current().clone();
+        commands.trigger_targets(OnEnter::<S>::new(previous, current), target);
     }
 }
 
@@ -157,11 +103,11 @@ pub fn on_reexit_transition<S: State>(
         if !state.is_updated {
             continue;
         }
+        // Guaranteed to be at least reentrant.
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(
-            OnReexit::<S>::new(state.previous().clone(), state.current().clone()),
-            target,
-        );
+        let previous = state.reentrant_previous().unwrap().clone();
+        let current = state.current().clone();
+        commands.trigger_targets(OnReexit::<S>::new(previous, current), target);
     }
 }
 
@@ -192,9 +138,9 @@ pub fn on_reenter_transition<S: State>(
             continue;
         }
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(
-            OnReenter::<S>::new(state.previous().clone(), state.current().clone()),
-            target,
-        );
+        // Guaranteed to be at least reentrant.
+        let previous = state.reentrant_previous().unwrap().clone();
+        let current = state.current().clone();
+        commands.trigger_targets(OnReenter::<S>::new(previous, current), target);
     }
 }

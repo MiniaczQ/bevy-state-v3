@@ -118,3 +118,15 @@ name = "State transitions"
 description = "Listening to state transitions"
 category = "State"
 wasm = false
+
+
+[[example]]
+name = "state_scoped_entities"
+path = "examples/state_scoped_entities.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.state_scoped_entities]
+name = "State scoped entities"
+description = "Entities that despawn when state changes"
+category = "State"
+wasm = false

@@ -10,8 +10,8 @@ use bevy_utils::tracing::warn;
 
 use crate::{
     components::StateData,
+    config::StateConfig,
     state::{State, StateRepr},
-    transitions::StateConfig,
     util::GlobalMarker,
 };
 
@@ -148,7 +148,7 @@ pub trait StatesExt {
 impl StatesExt for Commands<'_, '_> {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
         self.queue(|world: &mut World| {
-            S::register_state(world, config, false);
+            S::register_state(world, config);
         });
         self
     }
@@ -166,7 +166,7 @@ impl StatesExt for Commands<'_, '_> {
 
 impl StatesExt for World {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
-        S::register_state(self, config, false);
+        S::register_state(self, config);
         self
     }
 
