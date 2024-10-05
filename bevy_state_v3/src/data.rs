@@ -5,7 +5,10 @@ use bevy_ecs::{
     storage::Storages,
 };
 
-use crate::{state::State, state_set::StateSet};
+use crate::{
+    state::{State, StateRepr},
+    state_set::StateSet,
+};
 
 /// State data component.
 #[derive(Debug)]
@@ -54,15 +57,7 @@ impl<S: State> StateData<S> {
         }
         self.is_updated = true;
     }
-}
 
-impl<S: State> Default for StateData<S> {
-    fn default() -> Self {
-        Self::new(S::Repr::default(), false)
-    }
-}
-
-impl<S: State> StateData<S> {
     /// Creates a new instance with initial value.
     pub fn new(initial: S::Repr, suppress_initial_update: bool) -> Self {
         Self {

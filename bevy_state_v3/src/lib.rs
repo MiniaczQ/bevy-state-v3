@@ -20,7 +20,7 @@ pub mod prelude {
     pub use crate::state::State;
     pub use crate::state_set::{StateDependencies, StateSet};
     pub use crate::transitions::{OnEnter, OnExit, OnReenter, OnReexit, StateConfig};
-    pub use crate::util::{in_state, state_changed};
+    pub use crate::util::{in_state, state_changed, Global};
 
     pub use bevy_state_macros::State;
 }
@@ -40,7 +40,7 @@ mod tests {
     use bevy_state_macros::State;
 
     use crate::{
-        self as bevy_state,
+        self as bevy_state_v3,
         scheduling::StateTransition,
         state_set::StateDependencies,
         transitions::{OnEnter, OnExit, StateConfig},
@@ -90,13 +90,13 @@ mod tests {
 
     fn test_all_states(world: &mut World, local: Option<Entity>) {
         world.init_resource::<Schedules>();
-        world.register_state::<ManualState>(StateConfig::empty());
-        world.register_state::<ComputedState>(StateConfig::empty());
-        world.register_state::<SubState>(StateConfig::empty());
-        world.register_state::<SubState>(StateConfig::empty());
-        world.init_state::<ManualState>(local, ManualState::A, false);
-        world.init_state::<ComputedState>(local, None, false);
-        world.init_state::<SubState>(local, None, false);
+        world.register_state(StateConfig::<ManualState>::empty());
+        world.register_state(StateConfig::<ComputedState>::empty());
+        world.register_state(StateConfig::<SubState>::empty());
+        world.register_state(StateConfig::<SubState>::empty());
+        world.init_state(local, ManualState::A, false);
+        world.init_state(local, None::<ComputedState>, false);
+        world.init_state(local, None::<SubState>, false);
         world.run_schedule(StateTransition);
         assert_states!(
             world,
@@ -187,14 +187,14 @@ mod tests {
     fn transition_order() {
         let mut world = World::new();
         world.init_resource::<Schedules>();
-        world.register_state::<ManualState>(StateConfig::default());
-        world.register_state::<ManualState2>(StateConfig::default());
-        world.register_state::<SubState2>(StateConfig::default());
-        world.register_state::<ComputedState>(StateConfig::default());
-        world.init_state::<ManualState>(None, ManualState::A, true);
-        world.init_state::<ManualState2>(None, ManualState2::C, true);
-        world.init_state::<SubState2>(None, None, true);
-        world.init_state::<ComputedState>(None, None, true);
+        world.register_state(StateConfig::<ManualState>::default());
+        world.register_state(StateConfig::<ManualState2>::default());
+        world.register_state(StateConfig::<SubState2>::default());
+        world.register_state(StateConfig::<ComputedState>::default());
+        world.init_state(None, ManualState::A, true);
+        world.init_state(None, ManualState2::C, true);
+        world.init_state(None, None::<SubState2>, true);
+        world.init_state(None, None::<ComputedState>, true);
         world.update_state(None, ManualState::A);
         world.update_state(None, ManualState2::C);
         world.update_state(None, SubState2::Y);

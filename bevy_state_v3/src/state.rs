@@ -15,20 +15,16 @@ use crate::{
     transitions::StateConfig,
 };
 
-/// Trait for types that act as a state.
 pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
     type Dependencies: StateSet;
     type Update: StateUpdate;
-    type Repr: StateRepr;
+    type Repr: StateRepr<State = Self>;
 
     const ORDER: u32 = Self::Dependencies::HIGHEST_ORDER + 1;
 
-    /// Called when a [`StateData::next`] value is set or any of the [`Self::Dependencies`] change.
-    /// If the returned value is [`Some`] it's used to update the [`StateData<Self>`].
     fn update(state: &mut StateData<Self>, dependencies: StateDependencies<'_, Self>)
         -> Self::Repr;
 
-    /// Registers this state in the world together with all dependencies.
     fn register_state(world: &mut World, transitions: StateConfig<Self>, recursive: bool) {
         Self::Dependencies::register_required_states(world);
 
@@ -89,10 +85,8 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 }
 
 pub trait StateUpdate: Default + Send + Sync + 'static {
-    /// Returns whether the state should be updated.
     fn should_update(&self) -> bool;
 
-    /// Resets the target to reset change detection.
     fn reset(&mut self);
 }
 
@@ -125,10 +119,17 @@ impl StateUpdate for () {
 }
 
 /// Wrappers that can represent a state.
-pub trait StateRepr: Default + Clone + PartialEq + Send + Sync + 'static {}
+pub trait StateRepr: Clone + PartialEq + Send + Sync + 'static {
+    /// Type of the raw state.
+    type State: State<Repr = Self>;
+}
 
 /// Raw state, good for root states that always exist.
-impl<S: State + Default> StateRepr for S {}
+impl<S: State<Repr = S>> StateRepr for S {
+    type State = S;
+}
 
 /// Optional state, good for computed/sub states which exist conditionally.
-impl<S: State> StateRepr for Option<S> {}
+impl<S: State<Repr = Option<S>>> StateRepr for Option<S> {
+    type State = S;
+}

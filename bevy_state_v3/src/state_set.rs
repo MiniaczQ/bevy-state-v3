@@ -13,14 +13,11 @@ use crate::{data::StateData, state::State, transitions::StateConfig};
 pub type StateDependencies<'a, S> =
     <<<S as State>::Dependencies as StateSet>::Query as WorldQuery>::Item<'a>;
 
-/// Set of states used for dependencies.
 pub trait StateSet {
-    /// Parameters provided to [`State::on_update`].
     type Query: QueryData + 'static;
 
     const HIGHEST_ORDER: u32;
 
-    /// Registers all elements as required components.
     fn register_required_components(
         component_id: ComponentId,
         components: &mut Components,
@@ -29,11 +26,14 @@ pub trait StateSet {
         inheritance_depth: u16,
     );
 
-    /// Registers all required states.
     fn register_required_states(world: &mut World);
 
-    /// Check dependencies for changes.
     fn is_changed(set: &<Self::Query as WorldQuery>::Item<'_>) -> bool;
+}
+
+fn missing_state<S: State>() -> StateData<S> {
+    let name = disqualified::ShortName::of::<S>();
+    panic!("Missing required dependency state {name}");
 }
 
 impl<S1: State> StateSet for S1 {
@@ -48,12 +48,7 @@ impl<S1: State> StateSet for S1 {
         required_components: &mut RequiredComponents,
         inheritance_depth: u16,
     ) {
-        required_components.register(
-            components,
-            storages,
-            StateData::<S1>::default,
-            inheritance_depth,
-        );
+        required_components.register(components, storages, missing_state::<S1>, inheritance_depth);
     }
 
     fn register_required_states(world: &mut World) {
@@ -98,7 +93,7 @@ macro_rules! impl_state_set {
                 _required_components: &mut RequiredComponents,
                 _inheritance_depth: u16,
             ) {
-                $(_required_components.register(_components, _storages, StateData::<$type>::default, _inheritance_depth);)*
+                $(_required_components.register(_components, _storages, missing_state::<$type>, _inheritance_depth);)*
             }
 
             fn register_required_states(_world: &mut World) {

@@ -3,6 +3,7 @@
 //! whether a logo moves around the screen and changes color.
 
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_state_v3::prelude::*;
 use rand::Rng;
 
 fn main() {
@@ -11,7 +12,7 @@ fn main() {
         // Register machinery for the state.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of state transition events.
-        .register_state::<LogoState>(StateTransitionsConfig::empty())
+        .register_state::<LogoState>(StateConfig::empty())
         .add_systems(Startup, setup)
         .add_systems(Update, toggle_logo)
         // Because we are using local state, we cannot use global state to control whether the systems should run.
@@ -35,13 +36,13 @@ fn toggle_logo(
     for (entity, state, toggle_on) in logos.iter() {
         if input.just_pressed(toggle_on.0) {
             // Decide the next state based on current state.
-            let next = match state.current().unwrap() {
+            let next = match state.current() {
                 LogoState::Enabled => LogoState::Disabled,
                 LogoState::Disabled => LogoState::Enabled,
             };
             // Request a change for the state.
             // We target a specific entity to update a local state machine.
-            commands.state_target(Some(entity), Some(next));
+            commands.update_state(Some(entity), next);
         }
     }
 }
@@ -60,7 +61,7 @@ struct ToggleOn(KeyCode);
 /// Create the camera and logo.
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     // Add camera.
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Create logo with random position and velocity.
     let mut rng = rand::thread_rng();
@@ -86,7 +87,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         ))
         .id();
     // Attach state to a local entity.
-    commands.init_state(Some(entity), Some(LogoState::Enabled), true);
+    commands.init_state(Some(entity), LogoState::Enabled, true);
 
     // Create another logo with random position and velocity.
     let mut rng = rand::thread_rng();
@@ -109,7 +110,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
         ToggleOn(KeyCode::Digit2),
         // This time we add the state directly, by hand.
-        StateData::new(Some(LogoState::Enabled), true),
+        StateData::<LogoState>::new(LogoState::Enabled, true),
     ));
 }
 
@@ -118,10 +119,10 @@ fn bounce_around(
     mut logos: Populated<(&StateData<LogoState>, &mut Transform, &mut Velocity), With<Sprite>>,
     camera: Single<&OrthographicProjection>,
 ) {
-    let camera = camera.single();
+    let camera = camera;
     for (state, mut transform, mut velocity) in logos.iter_mut() {
         // Ignore logos which are in the disabled state.
-        if *state.current().unwrap() == LogoState::Disabled {
+        if *state.current() == LogoState::Disabled {
             continue;
         }
 
@@ -164,7 +165,7 @@ fn bounce_around(
 fn cycle_color(mut logos: Populated<(&StateData<LogoState>, &mut Sprite), With<Sprite>>) {
     for (state, mut sprite) in logos.iter_mut() {
         // Ignore logos which are in the disabled state.
-        if *state.current().unwrap() == LogoState::Disabled {
+        if *state.current() == LogoState::Disabled {
             continue;
         }
 

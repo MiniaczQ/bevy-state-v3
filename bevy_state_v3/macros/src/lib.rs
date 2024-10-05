@@ -4,7 +4,7 @@
 
 extern crate proc_macro;
 
-use bevy_macro_utils::BevyManifest;
+//use bevy_macro_utils::BevyManifest;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
@@ -13,7 +13,8 @@ use syn::{
 };
 
 pub(crate) fn bevy_state_path() -> Path {
-    BevyManifest::default().get_path("bevy_state")
+    //BevyManifest::default().get_path("bevy_state_v3")
+    syn::parse("bevy_state_v3".parse::<TokenStream>().unwrap()).unwrap()
 }
 
 struct Dependency {

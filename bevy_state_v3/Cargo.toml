@@ -1,0 +1,98 @@
+[package]
+name = "bevy_state_v3"
+version = "0.15.0-dev"
+edition = "2021"
+description = "Finite state machines for Bevy"
+homepage = "https://bevyengine.org"
+repository = "https://github.com/bevyengine/bevy"
+license = "MIT OR Apache-2.0"
+keywords = ["bevy"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["bevy_reflect", "bevy_app", "bevy_hierarchy"]
+bevy_reflect = ["dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
+bevy_app = ["dep:bevy_app"]
+bevy_hierarchy = ["dep:bevy_hierarchy"]
+
+[dependencies]
+bevy_ecs = { git = "https://github.com/bevyengine/bevy" }
+bevy_state_macros = { path = "macros", version = "0.15.0-dev" }
+bevy_utils = { git = "https://github.com/bevyengine/bevy" }
+bevy_reflect = { git = "https://github.com/bevyengine/bevy", optional = true }
+bevy_app = { git = "https://github.com/bevyengine/bevy", optional = true }
+bevy_hierarchy = { git = "https://github.com/bevyengine/bevy", optional = true }
+disqualified = "1.0"
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+rustdoc-args = ["-Zunstable-options"]
+all-features = true
+
+[dev-dependencies]
+bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_color",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_picking",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi_threaded",
+    "png",
+    "hdr",
+    "vorbis",
+    "x11",
+    "bevy_gizmos",
+    "android_shared_stdcxx",
+    "tonemapping_luts",
+    "smaa_luts",
+    "default_font",
+    "webgl2",
+    "sysinfo_plugin",
+] }
+rand = "0.8.5"
+
+[[example]]
+name = "simple_global_state"
+path = "examples/simple_global_state.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.simple_global_state]
+name = "Simple global state"
+description = "Simple way of using global state"
+category = "State"
+wasm = false
+
+[[example]]
+name = "simple_local_state"
+path = "examples/simple_local_state.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.simple_local_state]
+name = "Simple local state"
+description = "Simple way of using local state"
+category = "State"
+wasm = false
+
+[[example]]
+name = "state_hierarchy"
+path = "examples/state_hierarchy.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.state_hierarchy]
+name = "State hierarchy"
+description = "Combining multiple states into a single state machine"
+category = "State"
+wasm = false

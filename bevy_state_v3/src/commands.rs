@@ -8,7 +8,12 @@ use bevy_ecs::{
 };
 use bevy_utils::tracing::warn;
 
-use crate::{data::StateData, state::State, transitions::StateConfig, util::GlobalMarker};
+use crate::{
+    data::StateData,
+    state::{State, StateRepr},
+    transitions::StateConfig,
+    util::GlobalMarker,
+};
 
 struct InitializeStateCommand<S: State> {
     local: Option<Entity>,
@@ -38,9 +43,7 @@ impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
                     Ok(entity) => entity,
                     Err(QuerySingleError::NoEntities(_)) => world.spawn(GlobalMarker).id(),
                     Err(QuerySingleError::MultipleEntities(_)) => {
-                        warn!(
-                    "Insert global state command failed, multiple entities have the `GlobalStateMarker` component."
-                );
+                        warn!("Insert global state command failed, multiple entities have the `GlobalStateMarker` component.");
                         return;
                     }
                 }
@@ -139,10 +142,10 @@ impl<S: State<Update = Option<S>>> IntoStateUpdate for S {
 pub trait StatesExt {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self;
 
-    fn init_state<S: State>(
+    fn init_state<R: StateRepr>(
         &mut self,
         local: Option<Entity>,
-        initial: S::Repr,
+        initial: R,
         suppress_initial_update: bool,
     ) -> &mut Self;
 
@@ -157,13 +160,13 @@ impl StatesExt for Commands<'_, '_> {
         self
     }
 
-    fn init_state<S: State>(
+    fn init_state<R: StateRepr>(
         &mut self,
         local: Option<Entity>,
-        initial: S::Repr,
+        initial: R,
         suppress_initial_update: bool,
     ) -> &mut Self {
-        self.queue(InitializeStateCommand::<S>::new(
+        self.queue(InitializeStateCommand::<R::State>::new(
             local,
             initial,
             suppress_initial_update,
@@ -183,13 +186,14 @@ impl StatesExt for World {
         self
     }
 
-    fn init_state<S: State>(
+    fn init_state<R: StateRepr>(
         &mut self,
         local: Option<Entity>,
-        initial: S::Repr,
+        initial: R,
         suppress_initial_update: bool,
     ) -> &mut Self {
-        InitializeStateCommand::<S>::new(local, initial, suppress_initial_update).apply(self);
+        InitializeStateCommand::<R::State>::new(local, initial, suppress_initial_update)
+            .apply(self);
         self
     }
 
@@ -206,14 +210,14 @@ impl StatesExt for bevy_app::SubApp {
         self
     }
 
-    fn init_state<S: State>(
+    fn init_state<R: StateRepr>(
         &mut self,
         local: Option<Entity>,
-        initial: S::Repr,
+        initial: R,
         suppress_initial_update: bool,
     ) -> &mut Self {
         self.world_mut()
-            .init_state::<S>(local, initial, suppress_initial_update);
+            .init_state(local, initial, suppress_initial_update);
         self
     }
 
@@ -230,14 +234,14 @@ impl StatesExt for bevy_app::App {
         self
     }
 
-    fn init_state<S: State>(
+    fn init_state<R: StateRepr>(
         &mut self,
         local: Option<Entity>,
-        initial: S::Repr,
+        initial: R,
         suppress_initial_update: bool,
     ) -> &mut Self {
         self.main_mut()
-            .init_state::<S>(local, initial, suppress_initial_update);
+            .init_state(local, initial, suppress_initial_update);
         self
     }
 

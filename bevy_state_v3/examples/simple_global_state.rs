@@ -3,6 +3,7 @@
 //! whether a logo moves around the screen and changes color.
 
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_state_v3::prelude::*;
 use rand::Rng;
 
 fn main() {
@@ -11,23 +12,24 @@ fn main() {
         // Register machinery for the state.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of state transition events.
-        .register_state::<LogoState>(StateTransitionsConfig::empty())
+        .register_state::<LogoState>(StateConfig::empty())
         // By targeting no specific entity, we create a global state.
         // We provide the initial state value.
         // Because we're not using transition events or state hierarchy, update suppresion doesn't matter.
-        .init_state(None, Some(LogoState::Enabled), true)
+        .init_state(None, LogoState::Enabled, true)
         .add_systems(Startup, setup)
         .add_systems(Update, toggle_logo)
         .add_systems(
             Update,
             // We can use global state to determine when certain systems run.
-            (bounce_around, cycle_color).run_if(in_state(Some(LogoState::Enabled))),
+            (bounce_around, cycle_color).run_if(in_state(LogoState::Enabled)),
         )
         .run();
 }
 
-#[derive(State, PartialEq, Debug, Clone)]
+#[derive(State, Default, PartialEq, Debug, Clone)]
 enum LogoState {
+    #[default]
     Enabled,
     Disabled,
 }
@@ -36,16 +38,16 @@ enum LogoState {
 fn toggle_logo(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
-    state: GlobalState<LogoState>,
+    state: Global<&StateData<LogoState>>,
 ) {
     if input.just_pressed(KeyCode::Digit1) {
         // Decide the next state based on current state.
-        let next = match state.get().current().unwrap() {
+        let next = match state.current() {
             LogoState::Enabled => LogoState::Disabled,
             LogoState::Disabled => LogoState::Enabled,
         };
         // Request a change for the state.
-        commands.state_target(None, Some(next));
+        commands.update_state(None, next);
     }
 }
 
@@ -59,7 +61,7 @@ struct Velocity(Vec2);
 /// Create the camera and logo.
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     // Add camera.
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 
     // Create logo with random position and velocity.
     let mut rng = rand::thread_rng();
@@ -88,7 +90,7 @@ fn bounce_around(
     mut logos: Populated<(&mut Transform, &mut Velocity), With<Sprite>>,
     camera: Single<&OrthographicProjection>,
 ) {
-    let camera = camera.single();
+    let camera = camera;
     for (mut transform, mut velocity) in logos.iter_mut() {
         transform.translation += velocity.0.extend(0.);
         let logo_pos = transform.translation.xy();
