@@ -12,7 +12,7 @@ use bevy_utils::tracing::warn;
 
 use crate::{
     components::{RegisteredState, StateData},
-    scheduling::{StateSystemSet, StateTransition},
+    system_set::{StateSystemSet, StateTransition},
     state_set::{StateDependencies, StateSet},
     transitions::StateConfig,
 };

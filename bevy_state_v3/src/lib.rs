@@ -6,7 +6,7 @@
 pub mod app;
 pub mod commands;
 pub mod components;
-pub mod scheduling;
+pub mod system_set;
 pub mod state;
 pub mod state_set;
 pub mod transitions;
@@ -20,7 +20,10 @@ pub mod prelude {
     pub use crate::components::StateData;
     pub use crate::state::{State, StateRepr, StateUpdate};
     pub use crate::state_set::{StateDependencies, StateSet};
-    pub use crate::transitions::{OnEnter, OnExit, OnReenter, OnReexit, StateConfig};
+    pub use crate::transitions::{
+        on_enter_transition, on_exit_transition, on_reenter_transition, on_reexit_transition,
+        OnEnter, OnExit, OnReenter, OnReexit, StateConfig,
+    };
     pub use crate::util::{in_state, state_changed, state_changed_to, Global};
 
     pub use bevy_state_macros::State;
@@ -42,7 +45,7 @@ mod tests {
 
     use crate::{
         self as bevy_state_v3,
-        scheduling::StateTransition,
+        system_set::StateTransition,
         state_set::StateDependencies,
         transitions::{OnEnter, OnExit, StateConfig},
     };

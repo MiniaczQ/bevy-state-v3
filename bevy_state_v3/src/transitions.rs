@@ -10,7 +10,7 @@ use bevy_ecs::{
     system::{Commands, Populated},
 };
 
-use crate::{components::StateData, scheduling::StateSystemSet, state::State, util::GlobalMarker};
+use crate::{components::StateData, system_set::StateSystemSet, state::State, util::GlobalMarker};
 
 /// State registration configuration.
 /// Currently only transitions can be configured.
@@ -154,7 +154,7 @@ pub fn on_reexit_transition<S: State>(
     query: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
 ) {
     for (entity, state, is_global) in query.iter() {
-        if !state.is_updated || state.is_reentrant() {
+        if !state.is_updated {
             continue;
         }
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
@@ -188,7 +188,7 @@ pub fn on_reenter_transition<S: State>(
     states: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
 ) {
     for (entity, state, is_global) in states.iter() {
-        if !state.is_updated || state.is_reentrant() {
+        if !state.is_updated {
             continue;
         }
         let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);

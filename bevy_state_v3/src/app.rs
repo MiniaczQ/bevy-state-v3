@@ -2,7 +2,7 @@
 
 use bevy_app::{MainScheduleOrder, Plugin, PreStartup, PreUpdate};
 
-use crate::scheduling::StateTransition;
+use crate::system_set::StateTransition;
 
 /// Plugin that registers state transition schedule.
 #[derive(Default)]

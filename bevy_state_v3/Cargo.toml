@@ -65,22 +65,22 @@ bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, f
 rand = "0.8.5"
 
 [[example]]
-name = "simple_global_state"
-path = "examples/simple_global_state.rs"
+name = "global_state"
+path = "examples/global_state.rs"
 doc-scrape-examples = true
 
-[package.metadata.example.simple_global_state]
+[package.metadata.example.global_state]
 name = "Simple global state"
 description = "Simple way of using global state"
 category = "State"
 wasm = false
 
 [[example]]
-name = "simple_local_state"
-path = "examples/simple_local_state.rs"
+name = "local_state"
+path = "examples/local_state.rs"
 doc-scrape-examples = true
 
-[package.metadata.example.simple_local_state]
+[package.metadata.example.local_state]
 name = "Simple local state"
 description = "Simple way of using local state"
 category = "State"
@@ -105,5 +105,16 @@ doc-scrape-examples = true
 [package.metadata.example.persistent_substate]
 name = "Persistent substate"
 description = "Substate that returns to the correct value when reactivated"
+category = "State"
+wasm = false
+
+[[example]]
+name = "state_transitions"
+path = "examples/state_transitions.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.state_transitions]
+name = "State transitions"
+description = "Listening to state transitions"
 category = "State"
 wasm = false

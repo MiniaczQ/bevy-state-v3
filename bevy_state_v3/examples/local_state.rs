@@ -3,7 +3,7 @@
 //! whether a logo moves around the screen and changes color.
 
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_state_v3::{prelude::*, state::StateRepr};
+use bevy_state_v3::prelude::*;
 use rand::Rng;
 
 fn main() {
