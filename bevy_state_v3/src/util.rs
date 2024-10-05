@@ -10,7 +10,7 @@ use crate::{
 /// Run condition.
 /// Returns true if global state is set to the specified target.
 pub fn in_state<R: StateRepr>(target: R) -> impl Fn(Global<&StateData<R::State>>) -> bool {
-    move |state: Global<&StateData<R::State>>| state.current() == &target
+    move |state: Global<&StateData<R::State>>| &target == state.current()
 }
 
 /// Run condition.
@@ -22,7 +22,9 @@ pub fn state_changed<S: State>(state: Global<&StateData<S>>) -> bool {
 /// Run condition.
 /// Returns true if global state changed to the specified target.
 pub fn state_changed_to<R: StateRepr>(target: R) -> impl Fn(Global<&StateData<R::State>>) -> bool {
-    move |state: Global<&StateData<R::State>>| state.is_updated() && state.current() == &target
+    move |state: Global<&StateData<R::State>>| {
+        state.is_updated() && !state.is_reentrant() && &target == state.current()
+    }
 }
 
 // TODO: Move to `bevy_ecs` when implementing resources as entities.

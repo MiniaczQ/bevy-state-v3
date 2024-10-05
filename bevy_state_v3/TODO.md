@@ -1,2 +1,0 @@
-- [ ] - derive macro
-- [ ] - defaults that work with required components

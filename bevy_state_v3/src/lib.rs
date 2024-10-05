@@ -16,9 +16,9 @@ pub mod util;
 pub mod prelude {
     #[cfg(feature = "bevy_app")]
     pub use crate::app::StatePlugin;
-    pub use crate::commands::StatesExt;
+    pub use crate::commands::{IntoStateUpdate, StatesExt};
     pub use crate::components::StateData;
-    pub use crate::state::State;
+    pub use crate::state::{State, StateRepr, StateUpdate};
     pub use crate::state_set::{StateDependencies, StateSet};
     pub use crate::transitions::{OnEnter, OnExit, OnReenter, OnReexit, StateConfig};
     pub use crate::util::{in_state, state_changed, state_changed_to, Global};
@@ -94,10 +94,10 @@ mod tests {
         world.register_state(StateConfig::<ManualState>::empty());
         world.register_state(StateConfig::<ComputedState>::empty());
         world.register_state(StateConfig::<SubState>::empty());
-        world.register_state(StateConfig::<SubState>::empty());
-        world.init_state(local, ManualState::A, false);
-        world.init_state(local, None::<ComputedState>, false);
-        world.init_state(local, None::<SubState>, false);
+        world.init_state(local, ManualState::A);
+        world.init_state(local, None::<ComputedState>);
+        world.init_state(local, None::<SubState>);
+        world.update_state(local, ManualState::A);
         world.run_schedule(StateTransition);
         assert_states!(
             world,
@@ -192,10 +192,10 @@ mod tests {
         world.register_state(StateConfig::<ManualState2>::default());
         world.register_state(StateConfig::<SubState2>::default());
         world.register_state(StateConfig::<ComputedState>::default());
-        world.init_state(None, ManualState::A, true);
-        world.init_state(None, ManualState2::C, true);
-        world.init_state(None, None::<SubState2>, true);
-        world.init_state(None, None::<ComputedState>, true);
+        world.init_state(None, ManualState::A);
+        world.init_state(None, ManualState2::C);
+        world.init_state(None, None::<SubState2>);
+        world.init_state(None, None::<ComputedState>);
         world.update_state(None, ManualState::A);
         world.update_state(None, ManualState2::C);
         world.update_state(None, SubState2::Y);

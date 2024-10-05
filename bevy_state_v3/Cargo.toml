@@ -87,12 +87,23 @@ category = "State"
 wasm = false
 
 [[example]]
-name = "state_hierarchy"
-path = "examples/state_hierarchy.rs"
+name = "substate"
+path = "examples/substate.rs"
 doc-scrape-examples = true
 
-[package.metadata.example.state_hierarchy]
-name = "State hierarchy"
-description = "Combining multiple states into a single state machine"
+[package.metadata.example.substate]
+name = "Substate"
+description = "Basic substate usage"
+category = "State"
+wasm = false
+
+[[example]]
+name = "persistent_substate"
+path = "examples/persistent_substate.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.persistent_substate]
+name = "Persistent substate"
+description = "Substate that returns to the correct value when reactivated"
 category = "State"
 wasm = false

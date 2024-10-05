@@ -16,6 +16,7 @@ pub struct StateData<S: State> {
     pub(crate) is_reentrant: bool,
 
     /// Last different state value.
+    /// This will be identical to `current` after initialization.
     pub(crate) previous: S::Repr,
 
     /// Current value of the state.
@@ -79,11 +80,11 @@ impl<S: State> StateData<S> {
     }
 
     /// Creates a new instance with initial value.
-    pub fn new(initial: S::Repr, suppress_initial_update: bool) -> Self {
+    pub fn new(initial: S::Repr) -> Self {
         Self {
             current: initial.clone(),
             previous: initial,
-            is_updated: !suppress_initial_update,
+            is_updated: false,
             is_reentrant: true,
             waker: S::Update::default(),
         }

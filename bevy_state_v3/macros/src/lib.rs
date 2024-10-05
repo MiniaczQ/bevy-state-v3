@@ -143,7 +143,7 @@ fn derive_sub_state(shared: Shared, dependency: Dependency) -> proc_macro2::Toke
             ) -> Self::Repr {
                 let manual = dependencies;
                 match (manual.current(), state.target_mut().take()) {
-                    (#dependency_value, None) => Some(SubState::default()),
+                    (#dependency_value, None) => Some(Self::default()),
                     (#dependency_value, Some(next)) => Some(next),
                     _ => None,
                 }

@@ -1,6 +1,4 @@
-//! This example shows how to use the most basic global state machine.
-//! The machine consists of a single state type that decides
-//! whether a logo moves around the screen and changes color.
+//! This is an extension of the `substate` example, where substate value is persisted after disabling and enabling.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;
@@ -11,20 +9,18 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        // Register machinery for the state.
-        // This is required for both global and local state, but only needs to be called once.
-        // By providing an empty config we opt-out of state transition events.
         .register_state::<LogoState>(StateConfig::empty())
-        // By targeting no specific entity, we create a global state.
-        // We provide the initial state value.
-        // Because we're not using transition events or state hierarchy, update suppresion doesn't matter.
+        .register_state::<CycleColorState>(StateConfig::empty())
         .init_state(None, LogoState::Enabled)
+        .init_state(None, Some(CycleColorState::Enabled))
         .add_systems(Startup, setup)
         .add_systems(Update, toggle_logo)
         .add_systems(
             Update,
-            // We can use global state to determine when certain systems run.
-            (bounce_around, cycle_color).run_if(in_state(LogoState::Enabled)),
+            (
+                bounce_around.run_if(in_state(LogoState::Enabled)),
+                cycle_color.run_if(in_state(Some(CycleColorState::Enabled))),
+            ),
         )
         .run();
 }
@@ -36,20 +32,42 @@ enum LogoState {
     Disabled,
 }
 
+#[derive(State, Default, PartialEq, Debug, Clone)]
+#[dependency(LogoState = LogoState::Enabled)]
+enum CycleColorState {
+    #[default]
+    Enabled,
+    Disabled,
+}
+
 /// User controls.
 fn toggle_logo(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
-    state: Global<&StateData<LogoState>>,
+    state: Global<(&StateData<LogoState>, &StateData<CycleColorState>)>,
 ) {
+    let (logo_state, cycle_color_state) = *state;
+
     if input.just_pressed(KeyCode::Digit1) {
         // Decide the next state based on current state.
-        let next = match state.current() {
+        let next = match logo_state.current() {
             LogoState::Enabled => LogoState::Disabled,
             LogoState::Disabled => LogoState::Enabled,
         };
         // Request a change for the state.
         commands.update_state(None, next);
+    }
+
+    if input.just_pressed(KeyCode::Digit2) {
+        match cycle_color_state.current() {
+            Some(CycleColorState::Enabled) => {
+                commands.update_state(None, CycleColorState::Disabled);
+            }
+            Some(CycleColorState::Disabled) => {
+                commands.update_state(None, CycleColorState::Enabled);
+            }
+            None => {}
+        };
     }
 }
 

@@ -1,7 +1,5 @@
 //! Helper methods for interacting with states.
 
-use std::any::type_name;
-
 use bevy_ecs::{
     entity::Entity,
     query::{QuerySingleError, With},
@@ -20,16 +18,11 @@ use crate::{
 struct InitializeStateCommand<S: State> {
     local: Option<Entity>,
     initial: S::Repr,
-    suppress_initial_update: bool,
 }
 
 impl<S: State> InitializeStateCommand<S> {
-    fn new(local: Option<Entity>, initial: S::Repr, suppress_initial_update: bool) -> Self {
-        Self {
-            local,
-            initial,
-            suppress_initial_update,
-        }
+    fn new(local: Option<Entity>, initial: S::Repr) -> Self {
+        Self { local, initial }
     }
 }
 
@@ -59,15 +52,14 @@ impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
             .ok();
         match state_data {
             None => {
-                world.entity_mut(entity).insert(StateData::<S>::new(
-                    self.initial,
-                    self.suppress_initial_update,
-                ));
+                world
+                    .entity_mut(entity)
+                    .insert(StateData::<S>::new(self.initial));
             }
             Some(_) => {
                 warn!(
                     "Attempted to initialize state {}, but it was already present.",
-                    type_name::<S>()
+                    disqualified::ShortName::of::<S>()
                 );
             }
         }
@@ -119,7 +111,7 @@ impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
         let Some(mut state) = entity.get_mut::<StateData<S>>() else {
             warn!(
                 "Set state command failed, entity does not have state {}",
-                type_name::<S>()
+                disqualified::ShortName::of::<S>()
             );
             return;
         };
@@ -133,9 +125,13 @@ pub trait IntoStateUpdate: State {
     fn into_state_update(self) -> Self::Update;
 }
 
-impl<S: State<Update = Option<S>>> IntoStateUpdate for S {
+impl<S> IntoStateUpdate for S
+where
+    S: State,
+    S::Update: From<S>,
+{
     fn into_state_update(self) -> Self::Update {
-        Some(self)
+        self.into()
     }
 }
 
@@ -144,12 +140,7 @@ impl<S: State<Update = Option<S>>> IntoStateUpdate for S {
 pub trait StatesExt {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self;
 
-    fn init_state<R: StateRepr>(
-        &mut self,
-        local: Option<Entity>,
-        initial: R,
-        suppress_initial_update: bool,
-    ) -> &mut Self;
+    fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self;
 
     fn update_state<S: IntoStateUpdate>(&mut self, local: Option<Entity>, update: S) -> &mut Self;
 }
@@ -162,17 +153,8 @@ impl StatesExt for Commands<'_, '_> {
         self
     }
 
-    fn init_state<R: StateRepr>(
-        &mut self,
-        local: Option<Entity>,
-        initial: R,
-        suppress_initial_update: bool,
-    ) -> &mut Self {
-        self.queue(InitializeStateCommand::<R::State>::new(
-            local,
-            initial,
-            suppress_initial_update,
-        ));
+    fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self {
+        self.queue(InitializeStateCommand::<R::State>::new(local, initial));
         self
     }
 
@@ -188,14 +170,8 @@ impl StatesExt for World {
         self
     }
 
-    fn init_state<R: StateRepr>(
-        &mut self,
-        local: Option<Entity>,
-        initial: R,
-        suppress_initial_update: bool,
-    ) -> &mut Self {
-        InitializeStateCommand::<R::State>::new(local, initial, suppress_initial_update)
-            .apply(self);
+    fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self {
+        InitializeStateCommand::<R::State>::new(local, initial).apply(self);
         self
     }
 
@@ -212,14 +188,8 @@ impl StatesExt for bevy_app::SubApp {
         self
     }
 
-    fn init_state<R: StateRepr>(
-        &mut self,
-        local: Option<Entity>,
-        initial: R,
-        suppress_initial_update: bool,
-    ) -> &mut Self {
-        self.world_mut()
-            .init_state(local, initial, suppress_initial_update);
+    fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self {
+        self.world_mut().init_state(local, initial);
         self
     }
 
@@ -236,14 +206,8 @@ impl StatesExt for bevy_app::App {
         self
     }
 
-    fn init_state<R: StateRepr>(
-        &mut self,
-        local: Option<Entity>,
-        initial: R,
-        suppress_initial_update: bool,
-    ) -> &mut Self {
-        self.main_mut()
-            .init_state(local, initial, suppress_initial_update);
+    fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self {
+        self.main_mut().init_state(local, initial);
         self
     }
 

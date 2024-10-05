@@ -1,6 +1,6 @@
 //! State related traits.
 
-use std::{any::type_name, fmt::Debug, u32};
+use std::{fmt::Debug, u32};
 
 use bevy_ecs::{
     query::{QuerySingleError, With},
@@ -50,7 +50,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
                 if !recursive {
                     warn!(
                         "State {} is already registered, additional configuration will be ignored.",
-                        type_name::<Self>()
+                        disqualified::ShortName::of::<Self>()
                     );
                 }
                 return;
@@ -58,7 +58,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
             Err(QuerySingleError::MultipleEntities(_)) => {
                 warn!(
                     "Failed to register state {}, edge already registered multiple times.",
-                    type_name::<Self>()
+                    disqualified::ShortName::of::<Self>()
                 );
                 return;
             }
@@ -140,14 +140,19 @@ impl StateUpdate for () {
 pub trait StateRepr: Clone + PartialEq + Send + Sync + 'static {
     /// Type of the raw state.
     type State: State<Repr = Self>;
+
+    /// Converts state representation into state data.
+    fn into_data(self) -> StateData<Self::State> {
+        StateData::new(self)
+    }
 }
 
-/// Raw state, good for root states that always exist.
+/// Raw state for states that always exist.
 impl<S: State<Repr = S>> StateRepr for S {
     type State = S;
 }
 
-/// Optional state, good for computed/sub states which exist conditionally.
+/// Optional state for computed/sub states which exist conditionally.
 impl<S: State<Repr = Option<S>>> StateRepr for Option<S> {
     type State = S;
 }

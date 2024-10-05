@@ -3,7 +3,7 @@
 //! whether a logo moves around the screen and changes color.
 
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_state_v3::prelude::*;
+use bevy_state_v3::{prelude::*, state::StateRepr};
 use rand::Rng;
 
 fn main() {
@@ -29,7 +29,7 @@ enum LogoState {
     Disabled,
 }
 
-/// When we click `1` or `2` on the keyboard, one of the logos activity will be toggled.
+/// User controls.
 fn toggle_logo(
     mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
@@ -89,7 +89,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         ))
         .id();
     // Attach state to a local entity.
-    commands.init_state(Some(entity), LogoState::Enabled, true);
+    commands.init_state(Some(entity), LogoState::Enabled);
 
     // Create another logo with random position and velocity.
     let mut rng = rand::thread_rng();
@@ -112,7 +112,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
         ToggleOn(KeyCode::Digit2),
         // This time we add the state directly, by hand.
-        StateData::<LogoState>::new(LogoState::Enabled, true),
+        LogoState::Enabled.into_data(),
     ));
 }
 
@@ -174,7 +174,3 @@ fn cycle_color(mut logos: Populated<(&StateData<LogoState>, &mut Sprite), With<S
         sprite.color = sprite.color.rotate_hue(0.3);
     }
 }
-
-// example ideas:
-// - target backends: returning substate, toggle, force retransition
-// - local state: 2 logos
