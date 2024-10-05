@@ -1,3 +1,5 @@
+//! State related traits.
+
 use std::{any::type_name, fmt::Debug, u32};
 
 use bevy_ecs::{
@@ -9,7 +11,7 @@ use bevy_ecs::{
 use bevy_utils::tracing::warn;
 
 use crate::{
-    data::{RegisteredState, StateData},
+    components::{RegisteredState, StateData},
     scheduling::{StateSystemSet, StateTransition},
     state_set::{StateDependencies, StateSet},
     transitions::StateConfig,
@@ -78,10 +80,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
     /// System for updating this state.
     fn update_state_data_system(
-        mut query: Populated<(
-            &mut StateData<Self>,
-            <Self::Dependencies as StateSet>::Query,
-        )>,
+        mut query: Populated<(&mut StateData<Self>, <Self::Dependencies as StateSet>::Data)>,
     ) {
         for (mut state, dependencies) in query.iter_mut() {
             state.is_updated = false;

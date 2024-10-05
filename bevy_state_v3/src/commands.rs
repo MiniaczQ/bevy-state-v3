@@ -1,3 +1,5 @@
+//! Helper methods for interacting with states.
+
 use std::any::type_name;
 
 use bevy_ecs::{
@@ -9,7 +11,7 @@ use bevy_ecs::{
 use bevy_utils::tracing::warn;
 
 use crate::{
-    data::StateData,
+    components::StateData,
     state::{State, StateRepr},
     transitions::StateConfig,
     util::GlobalMarker,

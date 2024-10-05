@@ -1,7 +1,10 @@
+//! Integration with app-level Bevy.
+
 use bevy_app::{MainScheduleOrder, Plugin, PreStartup, PreUpdate};
 
 use crate::scheduling::StateTransition;
 
+/// Plugin that registers state transition schedule.
 #[derive(Default)]
 pub struct StatePlugin;
 

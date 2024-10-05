@@ -1,3 +1,5 @@
+//! State related components.
+
 use std::marker::PhantomData;
 
 use bevy_ecs::{
@@ -7,18 +9,22 @@ use bevy_ecs::{
 
 use crate::{state::State, state_set::StateSet};
 
-/// State data component.
+/// Component that stores state data.
 #[derive(Debug)]
 pub struct StateData<S: State> {
     /// Whether this state was reentered.
     pub(crate) is_reentrant: bool,
+
     /// Last different state value.
     pub(crate) previous: S::Repr,
+
     /// Current value of the state.
     pub(crate) current: S::Repr,
+
     /// Proposed state value to be considered during next [`StateTransition`](crate::state::StateTransition).
     /// How this value actually impacts the state depends on the [`State::update`] function.
     pub(crate) waker: S::Update,
+
     /// Whether this state was updated in the last [`StateTransition`] schedule.
     /// For a standard use case, this happens once per frame.
     pub(crate) is_updated: bool,
@@ -61,6 +67,7 @@ impl<S: State> Component for StateData<S> {
 }
 
 impl<S: State> StateData<S> {
+    /// Update current state.
     pub(crate) fn update(&mut self, next: S::Repr) {
         if next == self.current {
             self.is_reentrant = true;
@@ -124,7 +131,7 @@ impl<S: State> StateData<S> {
     }
 }
 
-/// Used to keep track of which states are registered and which aren't.
+/// Component for tracking registered states.
 #[derive(Component)]
 pub struct RegisteredState<S: State>(PhantomData<S>);
 

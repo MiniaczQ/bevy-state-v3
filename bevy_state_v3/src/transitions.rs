@@ -1,3 +1,5 @@
+//! Built-in state transitions.
+
 use std::marker::PhantomData;
 
 use bevy_ecs::{
@@ -8,8 +10,11 @@ use bevy_ecs::{
     system::{Commands, Populated},
 };
 
-use crate::{data::StateData, scheduling::StateSystemSet, state::State, util::GlobalMarker};
+use crate::{components::StateData, scheduling::StateSystemSet, state::State, util::GlobalMarker};
 
+/// State registration configuration.
+/// Currently only transitions can be configured.
+/// Configuration is only applied when registering state for the first time.
 pub struct StateConfig<S: State> {
     pub(crate) systems: Vec<SystemConfigs>,
     _state: PhantomData<S>,
@@ -69,11 +74,13 @@ pub struct OnExit<S: State> {
 }
 
 impl<S: State> OnExit<S> {
+    /// Creates a new exit transition event.
     pub fn new(previous: S::Repr, current: S::Repr) -> Self {
         Self { previous, current }
     }
 }
 
+/// System for triggering exit transition events.
 pub fn on_exit_transition<S: State>(
     mut commands: Commands,
     query: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
@@ -101,11 +108,13 @@ pub struct OnEnter<S: State> {
 }
 
 impl<S: State> OnEnter<S> {
+    /// Creates a new enter transition event.
     pub fn new(previous: S::Repr, current: S::Repr) -> Self {
         Self { previous, current }
     }
 }
 
+/// System for triggering enter transition events.
 pub fn on_enter_transition<S: State>(
     mut commands: Commands,
     states: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
@@ -133,11 +142,13 @@ pub struct OnReexit<S: State> {
 }
 
 impl<S: State> OnReexit<S> {
+    /// Creates a new re-exit transition event.
     pub fn new(previous: S::Repr, current: S::Repr) -> Self {
         Self { previous, current }
     }
 }
 
+/// System for triggering re-exit transition events.
 pub fn on_reexit_transition<S: State>(
     mut commands: Commands,
     query: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
@@ -165,11 +176,13 @@ pub struct OnReenter<S: State> {
 }
 
 impl<S: State> OnReenter<S> {
+    /// Creates a new re-enter transition event.
     pub fn new(previous: S::Repr, current: S::Repr) -> Self {
         Self { previous, current }
     }
 }
 
+/// System for triggering re-enter transition events.
 pub fn on_reenter_transition<S: State>(
     mut commands: Commands,
     states: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,

@@ -1,3 +1,5 @@
+//! System set for scheduling state transitions.
+
 use bevy_ecs::schedule::{IntoSystemSetConfigs, ScheduleLabel, SystemSet};
 
 use crate::state::State;
@@ -32,18 +34,22 @@ pub enum StateSystemSet {
 }
 
 impl StateSystemSet {
+    /// Returns system set used to update this state.
     pub fn update<S: State>() -> Self {
         Self::Update(S::ORDER)
     }
 
+    /// Returns system set used to run exit transitions for this state.
     pub fn exit<S: State>() -> Self {
         Self::Exit(S::ORDER)
     }
 
+    /// Returns system set used to run enter transitions for this state.
     pub fn enter<S: State>() -> Self {
         Self::Enter(S::ORDER)
     }
 
+    /// Returns system set configuration for this set.
     pub fn configuration<S: State>() -> impl IntoSystemSetConfigs {
         (
             (Self::AllUpdates, Self::AllExits, Self::AllEnters).chain(),

@@ -1,3 +1,5 @@
+//! Sets of states for specifying dependencies.
+
 use std::u32;
 
 use bevy_ecs::{
@@ -8,16 +10,23 @@ use bevy_ecs::{
 };
 use bevy_utils::all_tuples;
 
-use crate::{data::StateData, state::State, transitions::StateConfig};
+use crate::{components::StateData, state::State, transitions::StateConfig};
 
+/// Shorthand for arguments provided to state `update` function.
 pub type StateDependencies<'a, S> =
-    <<<S as State>::Dependencies as StateSet>::Query as WorldQuery>::Item<'a>;
+    <<<S as State>::Dependencies as StateSet>::Data as WorldQuery>::Item<'a>;
 
+/// Set of states which can be used as dependencies.
 pub trait StateSet {
-    type Query: QueryData + 'static;
+    /// Data of dependency states.
+    type Data: QueryData + 'static;
 
+    /// Highest update order in the set.
+    /// This is 0 for empty sets.
     const HIGHEST_ORDER: u32;
 
+    /// Registers all states in the set as required components.
+    /// Missing dependency state components will result in a panic.
     fn register_required_components(
         component_id: ComponentId,
         components: &mut Components,
@@ -26,9 +35,12 @@ pub trait StateSet {
         inheritance_depth: u16,
     );
 
+    /// Registers all states in the set in the world.
+    /// Default state configuration is used.
     fn register_required_states(world: &mut World);
 
-    fn is_changed(set: &<Self::Query as WorldQuery>::Item<'_>) -> bool;
+    /// Returns whether any of the dependencies changed.
+    fn is_changed(set: &<Self::Data as WorldQuery>::Item<'_>) -> bool;
 }
 
 fn missing_state<S: State>() -> StateData<S> {
@@ -37,7 +49,7 @@ fn missing_state<S: State>() -> StateData<S> {
 }
 
 impl<S1: State> StateSet for S1 {
-    type Query = &'static StateData<S1>;
+    type Data = &'static StateData<S1>;
 
     const HIGHEST_ORDER: u32 = S1::ORDER;
 
@@ -55,7 +67,7 @@ impl<S1: State> StateSet for S1 {
         S1::register_state(world, StateConfig::default(), true);
     }
 
-    fn is_changed(s1: &<Self::Query as WorldQuery>::Item<'_>) -> bool {
+    fn is_changed(s1: &<Self::Data as WorldQuery>::Item<'_>) -> bool {
         s1.is_updated
     }
 }
@@ -82,7 +94,7 @@ macro_rules! impl_state_set {
     ($(#[$meta:meta])* $(($type:ident, $var:ident)), *) => {
         $(#[$meta])*
         impl<$($type: State), *> StateSet for ($($type, )*) {
-            type Query = ($(&'static StateData<$type>, )*);
+            type Data = ($(&'static StateData<$type>, )*);
 
             const HIGHEST_ORDER: u32 = max!($($type::ORDER,)* 0);
 
@@ -100,7 +112,7 @@ macro_rules! impl_state_set {
                 $($type::register_state(_world, StateConfig::default(), true);)*
             }
 
-            fn is_changed(($($var,)*): &<Self::Query as WorldQuery>::Item<'_>) -> bool {
+            fn is_changed(($($var,)*): &<Self::Data as WorldQuery>::Item<'_>) -> bool {
                 $($var.is_updated ||)* false
             }
         }

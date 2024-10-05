@@ -2,25 +2,26 @@
 
 #![allow(unsafe_code)]
 
-pub mod commands;
-pub mod data;
 #[cfg(feature = "bevy_app")]
-pub mod plugin;
+pub mod app;
+pub mod commands;
+pub mod components;
 pub mod scheduling;
 pub mod state;
 pub mod state_set;
 pub mod transitions;
 pub mod util;
 
+/// Re-export of common state types and functions.
 pub mod prelude {
-    pub use crate::commands::StatesExt;
-    pub use crate::data::StateData;
     #[cfg(feature = "bevy_app")]
-    pub use crate::plugin::StatePlugin;
+    pub use crate::app::StatePlugin;
+    pub use crate::commands::StatesExt;
+    pub use crate::components::StateData;
     pub use crate::state::State;
     pub use crate::state_set::{StateDependencies, StateSet};
     pub use crate::transitions::{OnEnter, OnExit, OnReenter, OnReexit, StateConfig};
-    pub use crate::util::{in_state, state_changed, Global};
+    pub use crate::util::{in_state, state_changed, state_changed_to, Global};
 
     pub use bevy_state_macros::State;
 }
@@ -45,7 +46,7 @@ mod tests {
         state_set::StateDependencies,
         transitions::{OnEnter, OnExit, StateConfig},
     };
-    use crate::{commands::StatesExt, data::StateData, state::State};
+    use crate::{commands::StatesExt, components::StateData, state::State};
 
     #[derive(State, Default, Clone, Debug, PartialEq)]
     enum ManualState {
