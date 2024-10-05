@@ -1,4 +1,4 @@
-//! New states wahoo
+//! State machines.
 
 #![allow(unsafe_code)]
 

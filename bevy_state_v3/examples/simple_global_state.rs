@@ -9,6 +9,8 @@ use rand::Rng;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        // TODO: remove once lands in `DefaultPlugins`
+        .add_plugins(StatePlugin)
         // Register machinery for the state.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of state transition events.

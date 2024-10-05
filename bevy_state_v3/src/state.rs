@@ -15,16 +15,27 @@ use crate::{
     transitions::StateConfig,
 };
 
+/// Types that exhibit state-like behavior.
 pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
+    /// Dependencies for this state.
+    /// Any update in dependencies will result in update of this state.
     type Dependencies: StateSet;
+
+    /// Data structure for updating this state.
     type Update: StateUpdate;
+
+    /// Internal representation of the state.
     type Repr: StateRepr<State = Self>;
 
+    /// State update order in transition graph.
     const ORDER: u32 = Self::Dependencies::HIGHEST_ORDER + 1;
 
+    /// Update function of this state.
+    /// Implement manually for custom behavior.
     fn update(state: &mut StateData<Self>, dependencies: StateDependencies<'_, Self>)
         -> Self::Repr;
 
+    /// Registers machinery for this state to work correctly.
     fn register_state(world: &mut World, transitions: StateConfig<Self>, recursive: bool) {
         Self::Dependencies::register_required_states(world);
 
@@ -65,6 +76,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         }
     }
 
+    /// System for updating this state.
     fn update_state_data_system(
         mut query: Populated<(
             &mut StateData<Self>,
@@ -78,16 +90,23 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
             if is_dependency_set_changed || is_target_changed {
                 let next = Self::update(&mut state, dependencies);
                 state.update(next);
-                state.waker.reset();
+                state.waker.post_update();
             }
         }
     }
 }
 
-pub trait StateUpdate: Default + Send + Sync + 'static {
+/// Types that store state update data.
+/// Implemented by by default for
+/// - [`()`] - states with no manual updates,
+/// - [`Option<S>`] - states with manual updates,
+/// - [`Option<Option<S>>`] - optional states with manual updates.
+pub trait StateUpdate: Debug + Default + Send + Sync + 'static {
+    /// Whether the state should be updated.
     fn should_update(&self) -> bool;
 
-    fn reset(&mut self);
+    /// Reset function for after update.
+    fn post_update(&mut self);
 }
 
 impl<S: State> StateUpdate for Option<S> {
@@ -95,7 +114,7 @@ impl<S: State> StateUpdate for Option<S> {
         self.is_some()
     }
 
-    fn reset(&mut self) {
+    fn post_update(&mut self) {
         self.take();
     }
 }
@@ -105,7 +124,7 @@ impl<S: State> StateUpdate for Option<Option<S>> {
         self.is_some()
     }
 
-    fn reset(&mut self) {
+    fn post_update(&mut self) {
         self.take();
     }
 }
@@ -115,7 +134,7 @@ impl StateUpdate for () {
         false
     }
 
-    fn reset(&mut self) {}
+    fn post_update(&mut self) {}
 }
 
 /// Wrappers that can represent a state.

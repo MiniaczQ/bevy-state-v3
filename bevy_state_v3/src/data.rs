@@ -5,10 +5,7 @@ use bevy_ecs::{
     storage::Storages,
 };
 
-use crate::{
-    state::{State, StateRepr},
-    state_set::StateSet,
-};
+use crate::{state::State, state_set::StateSet};
 
 /// State data component.
 #[derive(Debug)]
@@ -25,6 +22,22 @@ pub struct StateData<S: State> {
     /// Whether this state was updated in the last [`StateTransition`] schedule.
     /// For a standard use case, this happens once per frame.
     pub(crate) is_updated: bool,
+}
+
+impl<S> Default for StateData<S>
+where
+    S: State,
+    S::Repr: Default,
+{
+    fn default() -> Self {
+        Self {
+            is_reentrant: Default::default(),
+            previous: Default::default(),
+            current: Default::default(),
+            waker: Default::default(),
+            is_updated: Default::default(),
+        }
+    }
 }
 
 impl<S: State> Component for StateData<S> {
