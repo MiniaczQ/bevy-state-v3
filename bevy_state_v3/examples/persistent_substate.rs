@@ -45,7 +45,7 @@ impl State for CycleColorState {
     type Repr = Option<Self>;
 
     fn update(state: &mut StateData<Self>, logo: StateDependencies<'_, Self>) -> Self::Repr {
-        match (logo.current(), &state.target().value) {
+        match (logo.current(), &state.update().value) {
             (LogoState::Enabled, value) => Some(value.clone()),
             (LogoState::Disabled, _) => None,
         }

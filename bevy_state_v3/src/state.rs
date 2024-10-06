@@ -88,7 +88,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
             let is_target_changed = state.waker.should_update();
             if is_dependency_set_changed || is_target_changed {
                 let next = Self::update(&mut state, dependencies);
-                state.update(next);
+                state.inner_update(next);
                 state.waker.post_update();
             }
         }
@@ -137,7 +137,7 @@ impl StateUpdate for () {
 }
 
 /// Wrappers that can represent a state.
-pub trait StateRepr: Clone + PartialEq + Send + Sync + 'static {
+pub trait StateRepr: Debug + Clone + PartialEq + Send + Sync + 'static {
     /// Type of the raw state.
     type State: State<Repr = Self>;
 

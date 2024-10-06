@@ -80,7 +80,8 @@ impl<S: IntoStateUpdate> WakeStateTargetCommand<S> {
     }
 }
 
-fn target_entity(world: &mut World, local: Option<Entity>) -> Option<Entity> {
+/// Conversion from local/global [`Option<Entity>`] to [`Entity`] for states.
+pub fn state_target_entity(world: &mut World, local: Option<Entity>) -> Option<Entity> {
     match local {
         Some(entity) => Some(entity),
         None => {
@@ -89,11 +90,11 @@ fn target_entity(world: &mut World, local: Option<Entity>) -> Option<Entity> {
                 .get_single(world)
             {
                 Err(QuerySingleError::NoEntities(_)) => {
-                    warn!("Set global state command failed, no global state entity exists.");
+                    warn!("No global state entity exists.");
                     return None;
                 }
                 Err(QuerySingleError::MultipleEntities(_)) => {
-                    warn!("Set global state command failed, multiple global state entities exist.");
+                    warn!("Multiple global state entities exist.");
                     return None;
                 }
                 Ok(entity) => Some(entity),
@@ -104,7 +105,7 @@ fn target_entity(world: &mut World, local: Option<Entity>) -> Option<Entity> {
 
 impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
     fn apply(self, world: &mut World) {
-        let Some(entity) = target_entity(world, self.local) else {
+        let Some(entity) = state_target_entity(world, self.local) else {
             return;
         };
         let mut entity = world.entity_mut(entity);

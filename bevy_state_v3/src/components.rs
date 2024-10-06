@@ -68,7 +68,7 @@ impl<S: State> Component for StateData<S> {
 
 impl<S: State> StateData<S> {
     /// Update current state.
-    pub(crate) fn update(&mut self, next: S::Repr) {
+    pub(crate) fn inner_update(&mut self, next: S::Repr) {
         if next == self.current {
             self.is_reentrant = true;
         } else {
@@ -120,13 +120,13 @@ impl<S: State> StateData<S> {
         self.is_updated
     }
 
-    /// Reference to the target.
-    pub fn target(&self) -> &S::Update {
+    /// Reference to the state update.
+    pub fn update(&self) -> &S::Update {
         &self.waker
     }
 
-    /// Mutable reference to the target.
-    pub fn target_mut(&mut self) -> &mut S::Update {
+    /// Mutable reference to the state update.
+    pub fn update_mut(&mut self) -> &mut S::Update {
         &mut self.waker
     }
 }

@@ -183,7 +183,7 @@ mod tests {
             match (
                 manual1.current(),
                 manual2.current(),
-                state.target_mut().take(),
+                state.update_mut().take(),
             ) {
                 (ManualState::B, ManualState2::D, Some(next)) => Some(next),
                 (ManualState::B, ManualState2::D, None) => Some(SubState2::X),
