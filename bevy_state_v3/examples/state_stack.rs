@@ -11,7 +11,7 @@ fn main() {
         .register_state::<MyState>(
             StateConfig::empty().with_on_enter(on_reenter_transition::<MyState>),
         )
-        .init_state(None, MyState::A)
+        .init_state(None, MyState::Alice)
         .add_systems(Update, user_input)
         .observe(observer_on_reenter)
         .run();
@@ -20,9 +20,11 @@ fn main() {
 #[derive(Default, PartialEq, Debug, Clone)]
 enum MyState {
     #[default]
+    Alice,
+    Had,
     A,
-    B,
-    C,
+    Little,
+    Lamb,
 }
 
 impl State for MyState {
@@ -83,9 +85,9 @@ impl<S: State + Default> StateUpdate for StackUpdate<S> {
 }
 
 /// Helper command for pushing and popping the stack.
-struct StackOpCommand<S> {
+struct StackOpCommand<R> {
     local: Option<Entity>,
-    op: StackOp<S>,
+    op: StackOp<R>,
 }
 
 impl<R> Command for StackOpCommand<R>
@@ -150,15 +152,21 @@ impl StackStateExt for Commands<'_, '_> {
 /// User controls.
 fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
     if input.just_pressed(KeyCode::Digit1) {
-        commands.push_state(None, MyState::A);
+        commands.push_state(None, MyState::Alice);
     }
     if input.just_pressed(KeyCode::Digit2) {
-        commands.push_state(None, MyState::B);
+        commands.push_state(None, MyState::Had);
     }
     if input.just_pressed(KeyCode::Digit3) {
-        commands.push_state(None, MyState::C);
+        commands.push_state(None, MyState::A);
     }
     if input.just_pressed(KeyCode::Digit4) {
+        commands.push_state(None, MyState::Little);
+    }
+    if input.just_pressed(KeyCode::Digit5) {
+        commands.push_state(None, MyState::Lamb);
+    }
+    if input.just_pressed(KeyCode::Digit6) {
         commands.pop_state::<MyState>(None);
     }
 }

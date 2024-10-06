@@ -45,6 +45,8 @@ fn user_input(
             // Request a change for the state.
             // We target a specific entity to update a local state machine.
             commands.update_state(Some(entity), next);
+            // We could also directly access `state.update` and set the next value,
+            // since we're already querrying for it.
         }
     }
 }

@@ -84,7 +84,7 @@ impl<S: State> StateData<S> {
             current: initial.clone(),
             previous: None,
             is_updated: false,
-            is_reentrant: true,
+            is_reentrant: false,
             waker: S::Update::default(),
         }
     }
