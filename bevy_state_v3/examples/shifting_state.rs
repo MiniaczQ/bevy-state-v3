@@ -40,15 +40,11 @@ impl State for MyState {
     type Repr = Self;
 
     fn update(state: &mut StateData<Self>, _: StateDependencies<'_, Self>) -> Self::Repr {
-        let op = state.update_mut().op.take().unwrap();
-        match op {
-            ShiftOp::Advance => state.update_mut().advance(),
-            ShiftOp::Retreat => state.update_mut().retreat(),
-        }
+        state.update_mut().update()
     }
 }
 
-/// Helper enum for stack operations.
+/// Helper enum for shift operations.
 #[derive(Debug)]
 enum ShiftOp {
     Advance,
@@ -57,9 +53,12 @@ enum ShiftOp {
 
 /// Trait for types that define all their variants in order.
 pub trait Variants: Sized {
+    /// Returns all variants of a type in order.
+    /// Can contain duplicates.
     fn variants() -> &'static [Self];
 }
 
+/// Data structure for storing shifting statess.
 #[derive(Debug)]
 pub struct ShiftUpdate<S>
 where
@@ -104,15 +103,15 @@ where
     S: State,
     S::Repr: Variants,
 {
-    fn advance(&mut self) -> S::Repr {
+    fn update(&mut self) -> S::Repr {
         let len = S::Repr::variants().len();
-        self.ptr = (self.ptr + 1) % len;
-        S::Repr::variants()[self.ptr].clone()
-    }
-
-    fn retreat(&mut self) -> S::Repr {
-        let len = S::Repr::variants().len();
-        self.ptr = (self.ptr + len - 1) % len;
+        // We assume there are no parent states, which means this value
+        // being present is the only reason state is being updated.
+        match self.op.take().unwrap() {
+            // If we try to shift at the edges, we wrap around.
+            ShiftOp::Advance => self.ptr = (self.ptr + 1) % len,
+            ShiftOp::Retreat => self.ptr = (self.ptr + len - 1) % len,
+        }
         S::Repr::variants()[self.ptr].clone()
     }
 }
@@ -144,12 +143,15 @@ where
     }
 }
 
+/// Helper trait for defining shifting state update commands.
 pub trait StackStateExt {
+    /// Advances the state forward.
     fn advance_state<S>(&mut self, local: Option<Entity>)
     where
         S: State<Update = ShiftUpdate<S>>,
         S::Repr: Variants;
 
+    /// Advances the state backwards.
     fn retreat_state<S>(&mut self, local: Option<Entity>)
     where
         S: State<Update = ShiftUpdate<S>>,

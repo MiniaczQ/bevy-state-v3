@@ -33,19 +33,7 @@ impl State for MyState {
     type Repr = Self;
 
     fn update(state: &mut StateData<Self>, _: StateDependencies<'_, Self>) -> Self::Repr {
-        let op = state.update_mut().op.take().unwrap();
-        match op {
-            StackOp::Push(new) => {
-                let current = state.current().clone();
-                state.update_mut().stack.push(current);
-                new
-            }
-            StackOp::Pop => {
-                let maybe_new = state.update_mut().stack.pop();
-                let new = maybe_new.unwrap_or_else(|| state.current().clone());
-                new
-            }
-        }
+        state.update()
     }
 }
 
@@ -74,13 +62,40 @@ impl<S: State> Default for StackUpdate<S> {
     }
 }
 
-impl<S: State + Default> StateUpdate for StackUpdate<S> {
+impl<S: State> StateUpdate for StackUpdate<S> {
     fn should_update(&self) -> bool {
         self.op.is_some()
     }
 
     fn post_update(&mut self) {
         self.op.take();
+    }
+}
+
+/// Helper trait for defining a helper function on state data, because
+/// stack state requires access to `update` as well as `current` fields.
+pub trait StackUpdateData<S: State<Update = StackUpdate<S>>> {
+    /// Updates the stacked state.
+    fn update(&mut self) -> S::Repr;
+}
+
+impl<S: State<Update = StackUpdate<S>>> StackUpdateData<S> for StateData<S> {
+    fn update(&mut self) -> S::Repr {
+        // We assume there are no parent states, which means this value
+        // being present is the only reason state is being updated.
+        let op = self.update_mut().op.take().unwrap();
+        match op {
+            StackOp::Push(new) => {
+                let current = self.current().clone();
+                self.update_mut().stack.push(current);
+                new
+            }
+            StackOp::Pop => {
+                let maybe_new = self.update_mut().stack.pop();
+                let new = maybe_new.unwrap_or_else(|| self.current().clone());
+                new
+            }
+        }
     }
 }
 
