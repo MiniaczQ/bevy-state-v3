@@ -140,3 +140,14 @@ name = "Stack based state"
 description = "Custom state which operates on a stack"
 category = "State"
 wasm = false
+
+[[example]]
+name = "behavior_tree"
+path = "examples/behavior_tree.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.behavior_tree]
+name = "Behavior tree"
+description = "Behavior tree made using states"
+category = "State"
+wasm = false
