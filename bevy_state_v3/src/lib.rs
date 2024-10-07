@@ -52,7 +52,7 @@ mod tests {
         config::StateConfig,
         prelude::StateScoped,
         state_set::StateDependencies,
-        system_set::StateTransition,
+        system_set::{StateTransitions, StateUpdates},
         transitions::{OnEnter, OnExit},
     };
     use crate::{commands::StatesExt, components::StateData, state::State};
@@ -107,7 +107,7 @@ mod tests {
         world.init_state(local, None::<ComputedState>);
         world.init_state(local, None::<SubState>);
         world.update_state(local, ManualState::A);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
         assert_states!(
             world,
             (ManualState, ManualState::A),
@@ -116,7 +116,7 @@ mod tests {
         );
 
         world.update_state(local, ManualState::B);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
         assert_states!(
             world,
             (ManualState, ManualState::B),
@@ -125,7 +125,7 @@ mod tests {
         );
 
         world.update_state(local, SubState::Y);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
         assert_states!(
             world,
             (ManualState, ManualState::B),
@@ -208,7 +208,7 @@ mod tests {
         world.update_state(None, ManualState::A);
         world.update_state(None, ManualState2::C);
         world.update_state(None, SubState2::Y);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
 
         world.init_resource::<StateTransitionTracker>();
         world.observe(track::<OnExit<ManualState>>());
@@ -221,10 +221,19 @@ mod tests {
         world.observe(track::<OnEnter<ComputedState>>());
         world.update_state(None, ManualState::B);
         world.update_state(None, ManualState2::D);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
+        world.run_schedule(StateTransitions);
 
         let transitions = &world.resource::<StateTransitionTracker>().0;
         // Test in groups, because order of directly unrelated states is non-deterministic.
+        println!("{:?}", transitions[0]);
+        println!("{:?}", transitions[1]);
+        println!("{:?}", transitions[2]);
+        println!("{:?}", transitions[3]);
+        println!("{:?}", transitions[4]);
+        println!("{:?}", transitions[5]);
+        println!("{:?}", transitions[6]);
+        println!("{:?}", transitions[7]);
         assert!(transitions[0..=1].contains(&type_name::<OnExit<SubState2>>()));
         assert!(transitions[0..=1].contains(&type_name::<OnExit<ComputedState>>()));
         assert!(transitions[2..=3].contains(&type_name::<OnExit<ManualState>>()));
@@ -243,7 +252,8 @@ mod tests {
         world.register_state::<ManualState>(StateConfig::default());
         world.init_state(None, ManualState::A);
         world.update_state(None, ManualState::B);
-        world.run_schedule(StateTransition);
+        world.run_schedule(StateUpdates);
+        world.run_schedule(StateTransitions);
 
         assert!(world.get_entity(entity).is_none());
     }

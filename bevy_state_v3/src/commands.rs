@@ -116,7 +116,7 @@ impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
             );
             return;
         };
-        state.waker = self.update;
+        state.update = self.update;
     }
 }
 

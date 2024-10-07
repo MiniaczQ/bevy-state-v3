@@ -15,7 +15,7 @@ use crate::{
     config::StateConfig,
     state_scoped::despawn_state_scoped,
     state_set::{StateDependencies, StateSet},
-    system_set::{StateSystemSet, StateTransition},
+    system_set::{StateTransitions, StateUpdates, TransitionSystemSet, UpdateSystemSet},
 };
 
 /// Types that exhibit state-like behavior.
@@ -65,16 +65,21 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
         // Register systems for this state.
         let mut schedules = world.resource_mut::<Schedules>();
-        let schedule = schedules.entry(StateTransition);
-        schedule.configure_sets(StateSystemSet::configuration::<Self>());
-        schedule
-            .add_systems(Self::update_state_data_system.in_set(StateSystemSet::update::<Self>()));
+
+        let update = schedules.entry(StateUpdates);
+        update.configure_sets(UpdateSystemSet::configuration::<Self>());
+        update
+            .add_systems(Self::update_state_data_system.in_set(UpdateSystemSet::update::<Self>()));
+
+        let transition = schedules.entry(StateTransitions);
+        transition.configure_sets(TransitionSystemSet::configuration::<Self>());
         for system in config.systems {
-            schedule.add_systems(system);
+            transition.add_systems(system);
         }
         if config.state_scoped {
-            schedule
-                .add_systems(despawn_state_scoped::<Self>.in_set(StateSystemSet::exit::<Self>()));
+            transition.add_systems(
+                despawn_state_scoped::<Self>.in_set(TransitionSystemSet::exit::<Self>()),
+            );
         }
     }
 
@@ -85,11 +90,11 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         for (mut state, dependencies) in query.iter_mut() {
             state.is_updated = false;
             let is_dependency_set_changed = Self::Dependencies::is_changed(&dependencies);
-            let is_target_changed = state.waker.should_update();
+            let is_target_changed = state.update.should_update();
             if is_dependency_set_changed || is_target_changed {
                 let next = Self::update(&mut state, dependencies);
                 state.inner_update(next);
-                state.waker.post_update();
+                state.update.post_update();
             }
         }
     }
@@ -101,10 +106,10 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 /// - [`Option<S>`] - states with manual updates,
 /// - [`Option<Option<S>>`] - optional states with manual updates.
 pub trait StateUpdate: Debug + Default + Send + Sync + 'static {
-    /// Whether the state should be updated.
+    /// Whether the state should be updated this frame.
     fn should_update(&self) -> bool;
 
-    /// Reset function for after update.
+    /// Reset function for after update happened.
     fn post_update(&mut self);
 }
 

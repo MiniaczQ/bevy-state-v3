@@ -23,7 +23,7 @@ pub struct StateData<S: State> {
 
     /// Proposed state value to be considered during next [`StateTransition`](crate::state::StateTransition).
     /// How this value actually impacts the state depends on the [`State::update`] function.
-    pub(crate) waker: S::Update,
+    pub(crate) update: S::Update,
 
     /// Whether this state was updated in the last [`StateTransition`] schedule.
     /// For a standard use case, this happens once per frame.
@@ -37,11 +37,11 @@ where
 {
     fn default() -> Self {
         Self {
-            is_reentrant: Default::default(),
-            previous: Default::default(),
+            is_reentrant: false,
+            previous: None,
             current: Default::default(),
-            waker: Default::default(),
-            is_updated: Default::default(),
+            update: Default::default(),
+            is_updated: true,
         }
     }
 }
@@ -83,9 +83,9 @@ impl<S: State> StateData<S> {
         Self {
             current: initial.clone(),
             previous: None,
-            is_updated: false,
+            is_updated: true,
             is_reentrant: false,
-            waker: S::Update::default(),
+            update: S::Update::default(),
         }
     }
 
@@ -122,12 +122,12 @@ impl<S: State> StateData<S> {
 
     /// Reference to the state update.
     pub fn update(&self) -> &S::Update {
-        &self.waker
+        &self.update
     }
 
     /// Mutable reference to the state update.
     pub fn update_mut(&mut self) -> &mut S::Update {
-        &mut self.waker
+        &mut self.update
     }
 }
 

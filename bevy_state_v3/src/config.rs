@@ -7,7 +7,7 @@ use bevy_ecs::schedule::{IntoSystemConfigs, SystemConfigs};
 use crate::{
     prelude::{on_enter_transition, on_exit_transition},
     state::State,
-    system_set::StateSystemSet,
+    system_set::TransitionSystemSet,
 };
 
 /// State registration configuration.
@@ -24,10 +24,10 @@ impl<S: State> Default for StateConfig<S> {
         Self {
             systems: vec![
                 on_exit_transition::<S>
-                    .in_set(StateSystemSet::exit::<S>())
+                    .in_set(TransitionSystemSet::exit::<S>())
                     .into(),
                 on_enter_transition::<S>
-                    .in_set(StateSystemSet::enter::<S>())
+                    .in_set(TransitionSystemSet::enter::<S>())
                     .into(),
             ],
             state_scoped: true,
@@ -51,7 +51,7 @@ impl<S: State> StateConfig<S> {
     /// An example system that runs [`OnExit`] is [`on_exit_transition`].
     pub fn with_on_exit<M>(mut self, system: impl IntoSystemConfigs<M>) -> Self {
         self.systems
-            .push(system.in_set(StateSystemSet::exit::<S>()));
+            .push(system.in_set(TransitionSystemSet::exit::<S>()));
         self
     }
 
@@ -59,7 +59,7 @@ impl<S: State> StateConfig<S> {
     /// An example system that runs [`OnEnter`] is [`on_enter_transition`].
     pub fn with_on_enter<M>(mut self, system: impl IntoSystemConfigs<M>) -> Self {
         self.systems
-            .push(system.in_set(StateSystemSet::enter::<S>()));
+            .push(system.in_set(TransitionSystemSet::enter::<S>()));
         self
     }
 
