@@ -4,13 +4,17 @@ use bevy_ecs::schedule::{IntoSystemSetConfigs, ScheduleLabel, SystemSet};
 
 use crate::state::State;
 
+/// Schedule where states get updated.
+/// This updates the `current`, `previous` and `is_reentrant` state values
+/// as well as the `is_updated` flag.
 #[derive(ScheduleLabel, Debug, PartialEq, Eq, Hash, Clone)]
 pub struct StateUpdates;
 
+/// Schedule where state transitions are triggered.
 #[derive(ScheduleLabel, Debug, PartialEq, Eq, Hash, Clone)]
 pub struct StateTransitions;
 
-/// - [`AllUpdates`] - Updates based on `target` and dependency changes from root states to leaf states, sets the `updated` flag.
+/// Updates from root states to leaf states.
 #[derive(SystemSet, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum UpdateSystemSet {
     /// All [`Update`]s.
@@ -19,9 +23,10 @@ pub enum UpdateSystemSet {
     Update(u32),
 }
 
+/// Exits run from leaf states to root states.
+/// Enters run from root states to leaf states.
+/// Triggered events are targeted for local state and untargeted for global state.
 #[derive(SystemSet, Clone, Debug, PartialEq, Eq, Hash)]
-/// - [`AllExits`] - Triggers [`StateExit<S>`] observers from leaf states to root states, targeted for local state, untargeted for global state.
-/// - [`AllEnters`] - Triggers [`StateEnter<S>`] observers from root states to leaf states, targeted for local state, untargeted for global state.
 pub enum TransitionSystemSet {
     /// All [`Exit`]s.
     AllExits,
