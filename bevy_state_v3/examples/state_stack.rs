@@ -13,7 +13,7 @@ fn main() {
         .register_state::<MyState>(
             StateConfig::empty().with_on_enter(on_reenter_transition::<MyState>),
         )
-        .init_state(None, MyState::Alice)
+        .init_state(None, None::<MyState>)
         .add_systems(Startup, setup)
         .add_systems(Update, user_input)
         .observe(update_text_node)
@@ -34,7 +34,7 @@ enum MyState {
 impl State for MyState {
     type Dependencies = ();
     type Update = StackUpdate<Self>;
-    type Repr = Self;
+    type Repr = Option<Self>;
 
     fn update(state: &mut StateData<Self>, _: StateDependencies<'_, Self>) -> Self::Repr {
         state.update()
@@ -55,9 +55,9 @@ enum StackOp<S> {
 pub struct StackUpdate<S: State> {
     /// The stack except the top value.
     /// Top value is stored as the `current` state.
-    stack: Vec<S::Repr>,
+    stack: Vec<S>,
     /// Pending operation on the stack.
-    op: Option<StackOp<S::Repr>>,
+    op: Option<StackOp<S>>,
 }
 
 impl<S: State> Default for StackUpdate<S> {
@@ -82,51 +82,46 @@ impl<S: State> StateUpdate for StackUpdate<S> {
 /// Helper for updating the state data.
 pub trait StackUpdateData<S: State<Update = StackUpdate<S>>> {
     /// Updates the stack state.
-    fn update(&mut self) -> S::Repr;
+    fn update(&mut self) -> Option<S>;
 }
 
-impl<S: State<Update = StackUpdate<S>>> StackUpdateData<S> for StateData<S> {
-    fn update(&mut self) -> S::Repr {
+impl<S: State<Repr = Option<S>, Update = StackUpdate<S>>> StackUpdateData<S> for StateData<S> {
+    fn update(&mut self) -> Option<S> {
         // We assume there are no parent states, which means this value being present is the only reason state is being updated.
         let op = self.update_mut().op.take().unwrap();
         match op {
             StackOp::Push(new) => {
-                let current = self.current().clone();
-                self.update_mut().stack.push(current);
-                new
+                if let Some(current) = self.current().clone() {
+                    self.update_mut().stack.push(current);
+                }
+                Some(new)
             }
-            StackOp::Pop => {
-                let maybe_new = self.update_mut().stack.pop();
-                // If there are no values on the stack, repeat the current state.
-                let new = maybe_new.unwrap_or_else(|| self.current().clone());
-                new
-            }
+            StackOp::Pop => self.update_mut().stack.pop(),
         }
     }
 }
 
 /// Command for updating the stack state.
-struct StackOpCommand<R> {
+struct StackOpCommand<S> {
     /// Global or local state.
     local: Option<Entity>,
     /// Operation we want to perform.
-    op: StackOp<R>,
+    op: StackOp<S>,
 }
 
-impl<R> Command for StackOpCommand<R>
+impl<S> Command for StackOpCommand<S>
 where
-    R: StateRepr,
-    R::State: State<Update = StackUpdate<R::State>>,
+    S: State<Repr = Option<S>, Update = StackUpdate<S>>,
 {
     fn apply(self, world: &mut World) {
         let Some(entity) = state_target_entity(world, self.local) else {
             return;
         };
         let mut entity = world.entity_mut(entity);
-        let Some(mut state_data) = entity.get_mut::<StateData<R::State>>() else {
+        let Some(mut state_data) = entity.get_mut::<StateData<S>>() else {
             warn!(
                 "Missing state data component for {}.",
-                disqualified::ShortName::of::<R::State>()
+                disqualified::ShortName::of::<S>()
             );
             return;
         };
@@ -137,23 +132,21 @@ where
 /// Commands extension for requesting stack operations.
 pub trait StackStateExt {
     /// Pushes a new state to the top of the stack.
-    fn push_state<R>(&mut self, local: Option<Entity>, value: R)
+    fn push_state<S>(&mut self, local: Option<Entity>, value: S)
     where
-        R: StateRepr,
-        R::State: State<Update = StackUpdate<R::State>>;
+        S: State<Repr = Option<S>, Update = StackUpdate<S>>;
 
     /// Pops the top state from the stack.
     /// Repeats the current state if no more states are left on the stack.
     fn pop_state<S>(&mut self, local: Option<Entity>)
     where
-        S: State<Update = StackUpdate<S>>;
+        S: State<Repr = Option<S>, Update = StackUpdate<S>>;
 }
 
 impl StackStateExt for Commands<'_, '_> {
-    fn push_state<R>(&mut self, local: Option<Entity>, value: R)
+    fn push_state<S>(&mut self, local: Option<Entity>, value: S)
     where
-        R: StateRepr,
-        R::State: State<Update = StackUpdate<R::State>>,
+        S: State<Repr = Option<S>, Update = StackUpdate<S>>,
     {
         self.queue(StackOpCommand {
             local,
@@ -163,11 +156,11 @@ impl StackStateExt for Commands<'_, '_> {
 
     fn pop_state<S>(&mut self, local: Option<Entity>)
     where
-        S: State<Update = StackUpdate<S>>,
+        S: State<Repr = Option<S>, Update = StackUpdate<S>>,
     {
         self.queue(StackOpCommand {
             local,
-            op: StackOp::<S::Repr>::Pop,
+            op: StackOp::<S>::Pop,
         });
     }
 }
@@ -188,7 +181,7 @@ fn setup(mut commands: Commands) {
 
     // Spawn text for displaying state.
     commands.spawn((
-        TextBundle::from_section("Alice", TextStyle::default()),
+        TextBundle::from_section("", TextStyle::default()),
         StateLabel,
     ));
 }
@@ -217,13 +210,16 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
 
 /// Observer that gets called every time the state changes.
 /// We use the re-entrant type so we also detect identity transitions.
+///
+/// Note that only the top of the stack is the current state.
+/// We display the rest of the stack for clarity.
 fn update_text_node(
     _: Trigger<OnReenter<MyState>>,
     state: Single<&StateData<MyState>>,
     mut label: Single<&mut Text, With<StateLabel>>,
 ) {
     let mut sections = vec![];
-    for state in state.update().stack.iter().chain([state.current()]) {
+    for state in state.update().stack.iter().chain(state.current().iter()) {
         sections.push(TextSection::from(format!("{:?}", state)));
     }
     label.sections = sections;
