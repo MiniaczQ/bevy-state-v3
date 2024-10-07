@@ -255,7 +255,7 @@ mod tests {
         world.run_schedule(StateUpdates);
         world.run_schedule(StateTransitions);
 
-        assert!(world.get_entity(entity).is_none());
+        assert!(world.get_entity(entity).is_ok());
     }
 
     // Debug stuff

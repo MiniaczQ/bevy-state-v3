@@ -1,4 +1,4 @@
-//! This example shows how to use hierarchy made of multiple states; a root state and it's substate.
+//! This is an extension of the `substate` example, where substate value is persisted after disabling and enabling.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;

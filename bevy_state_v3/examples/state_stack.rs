@@ -53,8 +53,7 @@ enum StackOp<S> {
 /// Stack update data structure for states.
 #[derive(Debug)]
 pub struct StackUpdate<S: State> {
-    /// The stack except the top value.
-    /// Top value is stored as the `current` state.
+    /// The stack except the top value, which is stored as the `current` state.
     stack: Vec<S>,
     /// Pending operation on the stack.
     op: Option<StackOp<S>>,
