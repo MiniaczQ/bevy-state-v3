@@ -11,6 +11,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
+        // We opt-out of default behaviors like state transition events or scoped entities.
         .register_state::<BehaviorState>(StateConfig::empty())
         .register_state::<StandingState>(StateConfig::empty())
         .register_state::<MovingState>(StateConfig::empty())
@@ -35,7 +36,7 @@ enum BehaviorState {
 }
 
 /// Persistent update similar to that in `persistent_substate` example.
-/// Main difference is the focus on manually setting updates rather than using a command.
+/// The main difference is focus on manually setting updates rather than using a command.
 #[derive(Debug, Default)]
 struct PersistentUpdate<S: State> {
     should_update: bool,
@@ -53,6 +54,7 @@ impl<S: State + Default> StateUpdate for PersistentUpdate<S> {
 }
 
 impl<S: State> PersistentUpdate<S> {
+    /// Sets update with provided state.
     pub fn set(&mut self, value: S) {
         self.should_update = true;
         self.value = value;
@@ -88,7 +90,7 @@ impl StandingState {
     /// Helper for creating random states.
     pub fn from_rng(rng: &mut dyn RngCore) -> Self {
         Self {
-            looking_speed: rng.gen_range(0.01..=0.3) * [-1.0, 1.0].choose(rng).unwrap(),
+            looking_speed: rng.gen_range(0.2..=1.0) * [-1.0, 1.0].choose(rng).unwrap(),
             vision_cos: rng.gen_range(0.99..=0.999),
         }
     }
@@ -121,7 +123,7 @@ impl MovingState {
     /// Helper for creating random states.
     pub fn from_rng(rng: &mut dyn RngCore, target: Vec2) -> Self {
         Self {
-            target: target,
+            target: target + Vec2::new(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0)),
             speed: rng.gen_range(10.0..=30.0),
         }
     }
@@ -146,7 +148,7 @@ fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
                 texture: texture.clone(),
                 transform: Transform::from_xyz(
                     rng.gen_range(-1000.0..=1000.0),
-                    rng.gen_range(-1000.0..=1000.0),
+                    rng.gen_range(-600.0..=600.0),
                     0.0,
                 )
                 .looking_to(Vec3::Z, Dir2::from_rng(&mut rng).extend(0.0)),
@@ -235,8 +237,13 @@ fn enemies_standing(
                 continue;
             }
             let front = search_trs.up();
-            let dir = (target_trs.translation - search_trs.translation).normalize();
-            let cos = front.dot(dir);
+            let offset = target_trs.translation - search_trs.translation;
+            let distance = offset.length();
+            if distance < 1.0 {
+                continue;
+            }
+            let direction = offset / distance;
+            let cos = front.dot(direction);
             if state.vision_cos < cos {
                 // Every enemy within vision is added to the reservoir to be potentially picked.
                 reservoir.add(target_trs.translation.xy(), 1.0);
