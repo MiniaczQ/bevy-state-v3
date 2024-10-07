@@ -18,6 +18,7 @@ bevy_hierarchy = ["dep:bevy_hierarchy"]
 
 [dependencies]
 bevy_ecs = { git = "https://github.com/bevyengine/bevy" }
+bevy_derive = { git = "https://github.com/bevyengine/bevy" }
 bevy_state_macros = { path = "macros", version = "0.15.0-dev" }
 bevy_utils = { git = "https://github.com/bevyengine/bevy" }
 bevy_reflect = { git = "https://github.com/bevyengine/bevy", optional = true }

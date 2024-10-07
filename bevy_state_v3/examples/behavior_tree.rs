@@ -130,6 +130,12 @@ impl MovingState {
 }
 
 fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
+    println!();
+    println!("There is no human input in this example.");
+    println!("The enemy ships will either look around for other ships");
+    println!("or move to a location where they spoted a ship.");
+    println!();
+
     // Add camera.
     commands.spawn(Camera2d);
 
