@@ -14,6 +14,7 @@ fn main() {
             StateConfig::empty().with_on_enter(on_reenter_transition::<MyState>),
         )
         .init_state(None, MyState::Alice)
+        .add_systems(Startup, setup)
         .add_systems(Update, user_input)
         .observe(observer_on_reenter)
         .run();
@@ -30,7 +31,17 @@ enum MyState {
 
 impl Variants for MyState {
     fn variants() -> &'static [Self] {
-        &[Self::Alice, Self::Had, Self::A, Self::Little, Self::Lamb]
+        &[
+            Self::Alice,
+            Self::Had,
+            Self::A,
+            Self::Little,
+            Self::Lamb,
+            // You can have duplicates
+            Self::Little,
+            Self::A,
+            Self::Had,
+        ]
     }
 }
 
@@ -194,8 +205,21 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
     }
 }
 
-fn observer_on_reenter(trigger: Trigger<OnReenter<MyState>>) {
-    // We ignore the target entity since we only have global states here.
-    let event = trigger.event();
-    info!("Entered state {:?}", event.current);
+#[derive(Component)]
+struct StateLabel;
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2d);
+
+    commands.spawn((
+        TextBundle::from_section("", TextStyle::default()),
+        StateLabel,
+    ));
+}
+
+fn observer_on_reenter(
+    trigger: Trigger<OnReenter<MyState>>,
+    mut text: Single<&mut Text, With<StateLabel>>,
+) {
+    text.sections[0].value = format!("{:?}", trigger.current);
 }
