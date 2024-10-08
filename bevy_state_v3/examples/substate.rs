@@ -1,4 +1,4 @@
-//! This example shows how to use hierarchy made of two states; a root state and it's substate.
+//! This example shows how to use hierarchy of two states: root and it's substate.
 
 use bevy::{
     color::palettes::tailwind::{GRAY_300, GREEN_400, YELLOW_200},
@@ -69,22 +69,27 @@ fn user_input(
     }
 }
 
+/// Component for orbiting another entity.
 #[derive(Component)]
 struct OrbitEntity {
     parent: Entity,
-    angle: f32,
     distance: f32,
+    speed: f32,
+    angle: f32,
 }
 
 impl OrbitEntity {
-    pub fn new(parent: Entity, angle: f32, distance: f32) -> Self {
+    pub fn new(parent: Entity, distance: f32, speed: f32, angle: f32) -> Self {
         Self {
             parent,
-            angle,
             distance,
+            speed,
+            angle,
         }
     }
 }
+
+// Marker components for filtering inner and outer circles.
 
 #[derive(Component)]
 struct InnerCircle;
@@ -92,7 +97,7 @@ struct InnerCircle;
 #[derive(Component)]
 struct OuterCircle;
 
-/// Create the camera.
+/// Create the camera and circles.
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -106,7 +111,10 @@ fn setup(
     // Add camera.
     commands.spawn(Camera2d::default());
 
-    // Add circles.
+    // Add 3 circles:
+    // - immovable center circle,
+    // - inner circle that orbits the immovable circle,
+    // - outer circle that orbits the inner circle.
     let innest = commands
         .spawn((
             Mesh2d(meshes.add(Circle::new(100.0))),
@@ -117,18 +125,19 @@ fn setup(
         .spawn((
             Mesh2d(meshes.add(Circle::new(20.0))),
             MeshMaterial2d(materials.add(Color::from(GREEN_400))),
-            OrbitEntity::new(innest, 0.0, 200.0),
+            OrbitEntity::new(innest, 200.0, 2.0, 0.0),
             InnerCircle,
         ))
         .id();
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(10.0))),
         MeshMaterial2d(materials.add(Color::from(GRAY_300))),
-        OrbitEntity::new(inner, 0.0, 40.0),
+        OrbitEntity::new(inner, 40.0, 5.0, 0.0),
         OuterCircle,
     ));
 }
 
+/// Makes the filtered entity orbit it's parent.
 fn orbit_filtered<M: Component>(
     mut queries: ParamSet<(
         Single<(&mut Transform, &mut OrbitEntity), With<M>>,
@@ -140,7 +149,7 @@ fn orbit_filtered<M: Component>(
     let center = queries.p1().get(parent).unwrap().translation;
     let delta = time.delta_seconds();
     let (transform, orbit) = &mut *queries.p0();
-    orbit.angle = (orbit.angle + delta) % core::f32::consts::TAU;
+    orbit.angle = (orbit.angle + orbit.speed * delta) % core::f32::consts::TAU;
     let offset = Quat::from_axis_angle(Vec3::Z, orbit.angle) * Vec3::new(orbit.distance, 0.0, 0.0);
     transform.translation = center + offset;
 }
