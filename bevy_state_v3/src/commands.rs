@@ -1,4 +1,5 @@
 //! Helper methods for interacting with states.
+//!
 
 use bevy_ecs::{
     entity::Entity,
@@ -120,6 +121,7 @@ impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
     }
 }
 
+/// Trait for converting 
 /// States which can be converted to their [`State::Update`].
 #[doc(hidden)]
 pub trait IntoStateUpdate: State {
@@ -136,9 +138,16 @@ where
     }
 }
 
-/// State related methods for [`Commands`], [`World`], [`SubApp`](bevy_app::SubApp) and [`App`](bevy_app::App).
+/// Methods for interacting with states:
+/// - registering state machinery in the world,
+/// - initializing states,
+/// - updating them.
+/// 
+/// Depending on which medium this is called on, those methods will have:
+/// - immediate effect: [`World`], [`SubApp`](bevy_app::SubApp) and [`App`](bevy_app::App),
+/// - deferred effect: [`Commands`].
 #[doc(hidden)]
-pub trait StatesExt {
+pub trait CoreStatesExt {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self;
 
     fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self;
@@ -146,7 +155,7 @@ pub trait StatesExt {
     fn update_state<S: IntoStateUpdate>(&mut self, local: Option<Entity>, update: S) -> &mut Self;
 }
 
-impl StatesExt for Commands<'_, '_> {
+impl CoreStatesExt for Commands<'_, '_> {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
         self.queue(|world: &mut World| {
             S::register_state(world, config);
@@ -165,7 +174,7 @@ impl StatesExt for Commands<'_, '_> {
     }
 }
 
-impl StatesExt for World {
+impl CoreStatesExt for World {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
         S::register_state(self, config);
         self
@@ -183,7 +192,7 @@ impl StatesExt for World {
 }
 
 #[cfg(feature = "bevy_app")]
-impl StatesExt for bevy_app::SubApp {
+impl CoreStatesExt for bevy_app::SubApp {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
         self.world_mut().register_state::<S>(config);
         self
@@ -201,7 +210,7 @@ impl StatesExt for bevy_app::SubApp {
 }
 
 #[cfg(feature = "bevy_app")]
-impl StatesExt for bevy_app::App {
+impl CoreStatesExt for bevy_app::App {
     fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
         self.main_mut().register_state::<S>(config);
         self

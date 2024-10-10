@@ -18,7 +18,7 @@ pub mod util;
 pub mod prelude {
     #[cfg(feature = "bevy_app")]
     pub use crate::app::StatePlugin;
-    pub use crate::commands::{IntoStateUpdate, StatesExt};
+    pub use crate::commands::{CoreStatesExt, IntoStateUpdate};
     pub use crate::components::StateData;
     pub use crate::config::StateConfig;
     pub use crate::state::{State, StateRepr, StateUpdate};
@@ -55,7 +55,7 @@ mod tests {
         system_set::{StateTransitions, StateUpdates},
         transitions::{OnEnter, OnExit},
     };
-    use crate::{commands::StatesExt, components::StateData, state::State};
+    use crate::{commands::CoreStatesExt, components::StateData, state::State};
 
     #[derive(State, Default, Clone, Debug, PartialEq)]
     enum ManualState {

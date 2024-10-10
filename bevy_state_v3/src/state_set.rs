@@ -35,7 +35,7 @@ pub trait StateSet {
     );
 
     /// Returns whether any of the dependencies changed.
-    fn is_changed(set: &<Self::Data as WorldQuery>::Item<'_>) -> bool;
+    fn is_updated(set: &<Self::Data as WorldQuery>::Item<'_>) -> bool;
 }
 
 fn missing_state<S: State>() -> StateData<S> {
@@ -58,7 +58,7 @@ impl<S1: State> StateSet for S1 {
         required_components.register(components, storages, missing_state::<S1>, inheritance_depth);
     }
 
-    fn is_changed(s1: &<Self::Data as WorldQuery>::Item<'_>) -> bool {
+    fn is_updated(s1: &<Self::Data as WorldQuery>::Item<'_>) -> bool {
         s1.is_updated
     }
 }
@@ -99,7 +99,7 @@ macro_rules! impl_state_set {
                 $(_required_components.register(_components, _storages, missing_state::<$type>, _inheritance_depth);)*
             }
 
-            fn is_changed(($($var,)*): &<Self::Data as WorldQuery>::Item<'_>) -> bool {
+            fn is_updated(($($var,)*): &<Self::Data as WorldQuery>::Item<'_>) -> bool {
                 $($var.is_updated ||)* false
             }
         }
