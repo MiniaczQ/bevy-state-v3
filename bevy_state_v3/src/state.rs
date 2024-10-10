@@ -1,6 +1,6 @@
 //! State related traits.
 
-use std::{fmt::Debug, u32};
+use core::fmt::Debug;
 
 use bevy_ecs::{
     query::{QuerySingleError, With},
@@ -14,7 +14,7 @@ use crate::{
     components::{RegisteredState, StateData},
     config::StateConfig,
     state_scoped::despawn_state_scoped,
-    state_set::{StateDependencies, StateSet},
+    state_set::{StateSet, StateSetData},
     system_set::{StateTransitions, StateUpdates, TransitionSystemSet, UpdateSystemSet},
 };
 
@@ -115,8 +115,10 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
     /// Update function of this state.
     /// Implement manually for custom behavior.
-    fn update(state: &mut StateData<Self>, dependencies: StateDependencies<'_, Self>)
-        -> Self::Repr;
+    fn update(
+        state: &mut StateData<Self>,
+        dependencies: StateSetData<'_, Self::Dependencies>,
+    ) -> Self::Repr;
 
     /// Registers machinery for this state type to work correctly.
     fn register_state(world: &mut World, config: StateConfig<Self>) {
@@ -166,7 +168,10 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
     /// System that updates the value of this state.
     fn update_state_data_system(
-        mut query: Populated<(&mut StateData<Self>, <Self::Dependencies as StateSet>::Data)>,
+        mut query: Populated<(
+            &mut StateData<Self>,
+            <Self::Dependencies as StateSet>::Query,
+        )>,
     ) {
         for (mut state, dependencies) in query.iter_mut() {
             state.is_updated = false;

@@ -1,5 +1,5 @@
 //! Various utility functions.
-//!
+
 use bevy_ecs::{component::Component, query::With, system::Single};
 
 use crate::{

@@ -23,12 +23,8 @@ impl<S: State> Default for StateConfig<S> {
     fn default() -> Self {
         Self {
             systems: vec![
-                on_exit_transition::<S>
-                    .in_set(TransitionSystemSet::exit::<S>())
-                    .into(),
-                on_enter_transition::<S>
-                    .in_set(TransitionSystemSet::enter::<S>())
-                    .into(),
+                on_exit_transition::<S>.in_set(TransitionSystemSet::exit::<S>()),
+                on_enter_transition::<S>.in_set(TransitionSystemSet::enter::<S>()),
             ],
             state_scoped: true,
             _state: Default::default(),

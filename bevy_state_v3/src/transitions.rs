@@ -46,8 +46,12 @@ pub fn on_exit_transition<S: State>(
         if !state.is_updated || state.is_reentrant() {
             continue;
         }
-        let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(OnExit::<S>(StateChange::from_data(state)), target);
+        let event = OnExit::<S>(StateChange::from_data(state));
+        if is_global {
+            commands.trigger(event);
+        } else {
+            commands.trigger_targets(event, entity);
+        };
     }
 }
 
@@ -65,8 +69,12 @@ pub fn on_enter_transition<S: State>(
         if !state.is_updated || state.is_reentrant() {
             continue;
         }
-        let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(OnEnter::<S>(StateChange::from_data(state)), target);
+        let event = OnEnter::<S>(StateChange::from_data(state));
+        if is_global {
+            commands.trigger(event);
+        } else {
+            commands.trigger_targets(event, entity);
+        };
     }
 }
 
@@ -84,8 +92,12 @@ pub fn on_reexit_transition<S: State>(
         if !state.is_updated {
             continue;
         }
-        let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(OnReexit::<S>(StateChange::from_data(state)), target);
+        let event = OnReexit::<S>(StateChange::from_data(state));
+        if is_global {
+            commands.trigger(event);
+        } else {
+            commands.trigger_targets(event, entity);
+        };
     }
 }
 
@@ -103,7 +115,11 @@ pub fn on_reenter_transition<S: State>(
         if !state.is_updated {
             continue;
         }
-        let target = is_global.then_some(Entity::PLACEHOLDER).unwrap_or(entity);
-        commands.trigger_targets(OnReenter::<S>(StateChange::from_data(state)), target);
+        let event = OnReenter::<S>(StateChange::from_data(state));
+        if is_global {
+            commands.trigger(event);
+        } else {
+            commands.trigger_targets(event, entity);
+        };
     }
 }

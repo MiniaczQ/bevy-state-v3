@@ -92,11 +92,11 @@ pub fn state_target_entity(world: &mut World, local: Option<Entity>) -> Option<E
             {
                 Err(QuerySingleError::NoEntities(_)) => {
                     warn!("No global state entity exists.");
-                    return None;
+                    None
                 }
                 Err(QuerySingleError::MultipleEntities(_)) => {
                     warn!("Multiple global state entities exist.");
-                    return None;
+                    None
                 }
                 Ok(entity) => Some(entity),
             }
@@ -121,7 +121,7 @@ impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
     }
 }
 
-/// Trait for converting 
+/// Trait for converting
 /// States which can be converted to their [`State::Update`].
 #[doc(hidden)]
 pub trait IntoStateUpdate: State {
@@ -142,7 +142,7 @@ where
 /// - registering state machinery in the world,
 /// - initializing states,
 /// - updating them.
-/// 
+///
 /// Depending on which medium this is called on, those methods will have:
 /// - immediate effect: [`World`], [`SubApp`](bevy_app::SubApp) and [`App`](bevy_app::App),
 /// - deferred effect: [`Commands`].

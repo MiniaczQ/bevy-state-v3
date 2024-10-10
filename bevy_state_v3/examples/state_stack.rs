@@ -36,7 +36,7 @@ impl State for MyState {
     type Update = StackUpdate<Self>;
     type Repr = Option<Self>;
 
-    fn update(state: &mut StateData<Self>, _: StateDependencies<'_, Self>) -> Self::Repr {
+    fn update(state: &mut StateData<Self>, _: StateSetData<'_, Self::Dependencies>) -> Self::Repr {
         state.update()
     }
 }

@@ -50,7 +50,7 @@ impl State for MyState {
     type Update = ShiftUpdate<Self>;
     type Repr = Self;
 
-    fn update(state: &mut StateData<Self>, _: StateDependencies<'_, Self>) -> Self::Repr {
+    fn update(state: &mut StateData<Self>, _: StateSetData<'_, Self::Dependencies>) -> Self::Repr {
         state.update_mut().update()
     }
 }

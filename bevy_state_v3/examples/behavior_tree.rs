@@ -78,7 +78,10 @@ impl State for StandingState {
     type Update = PersistentUpdate<Self>;
     type Repr = Option<Self>;
 
-    fn update(state: &mut StateData<Self>, behavior: StateDependencies<'_, Self>) -> Self::Repr {
+    fn update(
+        state: &mut StateData<Self>,
+        behavior: StateSetData<'_, Self::Dependencies>,
+    ) -> Self::Repr {
         match behavior.current() {
             BehaviorState::Standing => Some(state.update().value.clone()),
             _ => None,
@@ -111,7 +114,10 @@ impl State for MovingState {
     type Update = PersistentUpdate<Self>;
     type Repr = Option<Self>;
 
-    fn update(state: &mut StateData<Self>, behavior: StateDependencies<'_, Self>) -> Self::Repr {
+    fn update(
+        state: &mut StateData<Self>,
+        behavior: StateSetData<'_, Self::Dependencies>,
+    ) -> Self::Repr {
         match behavior.current() {
             BehaviorState::Moving => Some(state.update().value.clone()),
             _ => None,

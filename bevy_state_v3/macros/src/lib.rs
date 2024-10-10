@@ -111,7 +111,7 @@ fn derive_root_state(shared: Shared) -> proc_macro2::TokenStream {
 
             fn update<'a>(
                 state: &mut StateData<Self>,
-                _: StateDependencies<'_, Self>,
+                _: StateSetData<'_, Self::Dependencies>,
             ) -> Self::Repr {
                 state.update_mut().take().unwrap()
             }
@@ -139,7 +139,7 @@ fn derive_sub_state(shared: Shared, dependency: Dependency) -> proc_macro2::Toke
 
             fn update<'a>(
                 state: &mut StateData<Self>,
-                dependencies: StateDependencies<'_, Self>,
+                dependencies: StateSetData<'_, Self::Dependencies>,
             ) -> Self::Repr {
                 let manual = dependencies;
                 match (manual.current(), state.update_mut().take()) {

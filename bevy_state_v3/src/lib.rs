@@ -23,7 +23,7 @@ pub mod prelude {
     pub use crate::config::StateConfig;
     pub use crate::state::{State, StateRepr, StateUpdate};
     pub use crate::state_scoped::StateScoped;
-    pub use crate::state_set::{StateDependencies, StateSet};
+    pub use crate::state_set::{StateSet, StateSetData};
     pub use crate::transitions::{
         on_enter_transition, on_exit_transition, on_reenter_transition, on_reexit_transition,
         OnEnter, OnExit, OnReenter, OnReexit,
@@ -51,7 +51,7 @@ mod tests {
         self as bevy_state_v3,
         config::StateConfig,
         prelude::StateScoped,
-        state_set::StateDependencies,
+        state_set::StateSetData,
         system_set::{StateTransitions, StateUpdates},
         transitions::{OnEnter, OnExit},
     };
@@ -74,7 +74,7 @@ mod tests {
 
         fn update<'a>(
             _state: &mut StateData<Self>,
-            dependencies: StateDependencies<'_, Self>,
+            dependencies: StateSetData<'_, Self::Dependencies>,
         ) -> Self::Repr {
             let manual = dependencies;
             match manual.current() {
@@ -178,7 +178,7 @@ mod tests {
 
         fn update<'a>(
             state: &mut StateData<Self>,
-            dependencies: StateDependencies<'_, Self>,
+            dependencies: StateSetData<'_, Self::Dependencies>,
         ) -> Option<Self> {
             let (manual1, manual2) = dependencies;
             match (

@@ -1,4 +1,4 @@
-//! Components and systems for state scoped entities.
+//! Machinery for state scoped entities.
 
 use bevy_ecs::{
     component::Component,

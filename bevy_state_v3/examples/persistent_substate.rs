@@ -46,7 +46,10 @@ impl State for OuterState {
     type Update = PersistentUpdate<Self>;
     type Repr = Option<Self>;
 
-    fn update(state: &mut StateData<Self>, inner: StateDependencies<'_, Self>) -> Self::Repr {
+    fn update(
+        state: &mut StateData<Self>,
+        inner: StateSetData<'_, Self::Dependencies>,
+    ) -> Self::Repr {
         match (inner.current(), &state.update().value) {
             (InnerState::Enabled, value) => Some(value.clone()),
             (InnerState::Disabled, _) => None,
