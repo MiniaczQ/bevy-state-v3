@@ -18,6 +18,6 @@ impl Plugin for StatePlugin {
         let mut schedule = app.world_mut().resource_mut::<MainScheduleOrder>();
         schedule.insert_startup_before(PreStartup, StateTransitions);
         schedule.insert_after(PreUpdate, StateUpdates);
-        schedule.insert_after(PreUpdate, StateTransitions);
+        schedule.insert_after(StateUpdates, StateTransitions);
     }
 }
