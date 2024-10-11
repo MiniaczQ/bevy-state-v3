@@ -69,20 +69,17 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let mut rng = rand::thread_rng();
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::hsv(rng.gen_range(0.0..=1.0), 1.0, 1.0),
-                anchor: Anchor::Center,
-                ..default()
-            },
-            texture,
-            transform: Transform::from_xyz(
-                rng.gen_range(-200.0..=200.),
-                rng.gen_range(-200.0..=200.),
-                0.,
-            ),
+        Sprite {
+            image: texture,
+            color: Color::hsv(rng.gen_range(0.0..=1.0), 1.0, 1.0),
+            anchor: Anchor::Center,
             ..default()
         },
+        Transform::from_xyz(
+            rng.gen_range(-200.0..=200.),
+            rng.gen_range(-200.0..=200.),
+            0.,
+        ),
         Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
     ));
 }

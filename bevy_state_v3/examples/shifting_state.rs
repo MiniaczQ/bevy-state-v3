@@ -16,7 +16,7 @@ fn main() {
         .init_state(None, MyState::Alice)
         .add_systems(Startup, setup)
         .add_systems(Update, user_input)
-        .observe(observer_on_reenter)
+        .add_observer(observer_on_reenter)
         .run();
 }
 
@@ -211,15 +211,12 @@ struct StateLabel;
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    commands.spawn((
-        TextBundle::from_section("", TextStyle::default()),
-        StateLabel,
-    ));
+    commands.spawn((Text::new(""), StateLabel));
 }
 
 fn observer_on_reenter(
     trigger: Trigger<OnReenter<MyState>>,
     mut text: Single<&mut Text, With<StateLabel>>,
 ) {
-    text.sections[0].value = format!("{:?}", trigger.current);
+    text.0 = format!("{:?}", trigger.current);
 }

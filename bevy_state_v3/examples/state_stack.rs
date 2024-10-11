@@ -16,7 +16,7 @@ fn main() {
         .init_state(None, None::<MyState>)
         .add_systems(Startup, setup)
         .add_systems(Update, user_input)
-        .observe(update_text_node)
+        .add_observer(update_text)
         .run();
 }
 
@@ -179,10 +179,7 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
     // Spawn text for displaying state.
-    commands.spawn((
-        TextBundle::from_section("", TextStyle::default()),
-        StateLabel,
-    ));
+    commands.spawn((Text::new(""), StateLabel));
 }
 
 /// User controls.
@@ -212,14 +209,15 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
 ///
 /// Note that only the top of the stack is the current state.
 /// We display the rest of the stack for clarity.
-fn update_text_node(
+fn update_text(
     _: Trigger<OnReenter<MyState>>,
     state: Single<&StateData<MyState>>,
-    mut label: Single<&mut Text, With<StateLabel>>,
+    label: Single<Entity, With<StateLabel>>,
+    mut text: UiTextWriter,
 ) {
-    let mut sections = vec![];
+    let mut content = String::new();
     for state in state.update().stack.iter().chain(state.current().iter()) {
-        sections.push(TextSection::from(format!("{:?}", state)));
+        content.push_str(&format!("{:?} ", state));
     }
-    label.sections = sections;
+    *text.text(*label, 0) = content;
 }

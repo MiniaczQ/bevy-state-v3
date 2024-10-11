@@ -1,7 +1,7 @@
 //! This example showcases the usage of state transitions.
 
 use bevy::prelude::*;
-use bevy_state_v3::prelude::*;
+use bevy_state_v3::{prelude::*, return_if_not_current, return_if_targeted};
 
 fn main() {
     App::new()
@@ -18,8 +18,8 @@ fn main() {
                 .with_on_enter(on_enter_transition::<MyState>),
         )
         .init_state(None, MyState::Enabled)
-        .observe(reexit_observer)
-        .observe(enter_observer)
+        .add_observer(reexit)
+        .add_observer(enter_enabled)
         .add_systems(Update, user_input)
         .run();
 }
@@ -41,22 +41,13 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
     }
 }
 
-fn reexit_observer(trigger: Trigger<OnReexit<MyState>>) {
-    // Entity on which this transition happened.
-    // If no entity was targeted, this is a global transition.
-    let entity = trigger.entity();
-    if entity != Entity::PLACEHOLDER {
-        return;
-    }
-    let event = trigger.event();
-    info!("Re-exit: {:?} -> {:?}", event.previous, event.current);
+fn reexit(trigger: Trigger<OnReexit<MyState>>) {
+    return_if_targeted!(trigger);
+    info!("Re-exited {:?}", trigger.current);
 }
 
-fn enter_observer(trigger: Trigger<OnEnter<MyState>>) {
-    let entity = trigger.entity();
-    if entity != Entity::PLACEHOLDER {
-        return;
-    }
-    let event = trigger.event();
-    info!("Enter: {:?} -> {:?}", event.previous, event.current);
+fn enter_enabled(trigger: Trigger<OnEnter<MyState>>) {
+    return_if_targeted!(trigger);
+    return_if_not_current!(trigger, MyState::Enabled);
+    info!("Entered Enabled");
 }

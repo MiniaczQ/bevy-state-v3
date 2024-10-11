@@ -151,21 +151,18 @@ fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
     let texture = assets.load("textures/simplespace/ship_C.png");
     for i in 0..enemy_count {
         commands.spawn((
-            SpriteBundle {
-                sprite: Sprite {
-                    color: Hsla::hsl(i as f32 * 360.0 / enemy_count as f32, 0.5, 0.5).into(),
-                    anchor: Anchor::Center,
-                    ..default()
-                },
-                texture: texture.clone(),
-                transform: Transform::from_xyz(
-                    rng.gen_range(-1000.0..=1000.0),
-                    rng.gen_range(-600.0..=600.0),
-                    0.0,
-                )
-                .looking_to(Vec3::Z, Dir2::from_rng(&mut rng).extend(0.0)),
+            Sprite {
+                image: texture.clone(),
+                color: Hsla::hsl(i as f32 * 360.0 / enemy_count as f32, 0.5, 0.5).into(),
+                anchor: Anchor::Center,
                 ..default()
             },
+            Transform::from_xyz(
+                rng.gen_range(-1000.0..=1000.0),
+                rng.gen_range(-600.0..=600.0),
+                0.0,
+            )
+            .looking_to(Vec3::Z, Dir2::from_rng(&mut rng).extend(0.0)),
             Enemy,
             // All states are attached directly.
             BehaviorState::Standing.into_data(),

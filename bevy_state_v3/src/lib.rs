@@ -211,14 +211,14 @@ mod tests {
         world.run_schedule(StateUpdates);
 
         world.init_resource::<StateTransitionTracker>();
-        world.observe(track::<OnExit<ManualState>>());
-        world.observe(track::<OnEnter<ManualState>>());
-        world.observe(track::<OnExit<ManualState2>>());
-        world.observe(track::<OnEnter<ManualState2>>());
-        world.observe(track::<OnExit<SubState2>>());
-        world.observe(track::<OnEnter<SubState2>>());
-        world.observe(track::<OnExit<ComputedState>>());
-        world.observe(track::<OnEnter<ComputedState>>());
+        world.add_observer(track::<OnExit<ManualState>>());
+        world.add_observer(track::<OnEnter<ManualState>>());
+        world.add_observer(track::<OnExit<ManualState2>>());
+        world.add_observer(track::<OnEnter<ManualState2>>());
+        world.add_observer(track::<OnExit<SubState2>>());
+        world.add_observer(track::<OnEnter<SubState2>>());
+        world.add_observer(track::<OnExit<ComputedState>>());
+        world.add_observer(track::<OnEnter<ComputedState>>());
         world.update_state(None, ManualState::B);
         world.update_state(None, ManualState2::D);
         world.run_schedule(StateUpdates);

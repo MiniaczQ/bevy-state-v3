@@ -18,9 +18,11 @@ use crate::{
     system_set::{StateTransitions, StateUpdates, TransitionSystemSet, UpdateSystemSet},
 };
 
-/// Trait for state in a hierarchy.
+/// Trait for states in a hierarchy.
 /// The implementation detail impact how state value will change dependning on user-requested data as well as parent states.
 /// It will also impact what kind of data is stored inside the [`StateData`] component.
+///
+/// # Derive macro
 ///
 /// Simplest implementation of this trait can be done through the [`State`](bevy_state_macros::State) derive macro:
 /// ```rs
@@ -47,6 +49,8 @@ use crate::{
 /// Mutation is done in the exact same way, by providing a new value.
 /// If the state is currently disabled, the update value will be lost.
 /// Additionally the [`Default`] trait is required to select a value if update was not set.
+///
+/// # Manual implementation
 ///
 /// Manual implementation is very helpful for non-basic use cases and heavily encouraged.
 /// For example, the substate macro can be implemented as:
@@ -83,7 +87,6 @@ use crate::{
 ///
 ///     // All other trait members have default implementations and it's not recommended to modify them.
 /// }
-///
 /// ```
 
 pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
