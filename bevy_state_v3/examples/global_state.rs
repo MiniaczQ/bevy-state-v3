@@ -14,7 +14,7 @@ fn main() {
         // Register machinery for the state.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of state transition events.
-        .register_state::<LogoState>(StateConfig::empty())
+        .register_state(StateConfig::<LogoState>::empty())
         // By targeting no specific entity, we create a global state.
         // We provide the initial state value.
         // Because we're not using transition events or state hierarchy, update suppresion doesn't matter.

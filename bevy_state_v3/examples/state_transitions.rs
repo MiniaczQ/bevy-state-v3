@@ -12,8 +12,8 @@ fn main() {
         // We use a custom set of transitions: re-exit & enter.
         // If we used `StateConfig::default()` we'd get: enter & exit.
         // You can register multiple exit/enter transitions.
-        .register_state::<MyState>(
-            StateConfig::empty()
+        .register_state(
+            StateConfig::<MyState>::empty()
                 .with_on_exit(on_reexit_transition::<MyState>)
                 .with_on_enter(on_enter_transition::<MyState>),
         )

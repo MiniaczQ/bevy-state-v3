@@ -1,4 +1,4 @@
-//! State machines.
+//! Global and local state machinery.
 
 #![allow(unsafe_code)]
 
@@ -22,7 +22,7 @@ pub mod prelude {
     pub use crate::components::StateData;
     pub use crate::config::StateConfig;
     pub use crate::state::{State, StateRepr, StateUpdate};
-    pub use crate::state_scoped::StateScoped;
+    pub use crate::state_scoped::{despawn_state_scoped, StateScoped};
     pub use crate::state_set::{StateSet, StateSetData};
     pub use crate::transitions::{
         on_enter_transition, on_exit_transition, on_reenter_transition, on_reexit_transition,
@@ -226,14 +226,6 @@ mod tests {
 
         let transitions = &world.resource::<StateTransitionTracker>().0;
         // Test in groups, because order of directly unrelated states is non-deterministic.
-        println!("{:?}", transitions[0]);
-        println!("{:?}", transitions[1]);
-        println!("{:?}", transitions[2]);
-        println!("{:?}", transitions[3]);
-        println!("{:?}", transitions[4]);
-        println!("{:?}", transitions[5]);
-        println!("{:?}", transitions[6]);
-        println!("{:?}", transitions[7]);
         assert!(transitions[0..=1].contains(&type_name::<OnExit<SubState2>>()));
         assert!(transitions[0..=1].contains(&type_name::<OnExit<ComputedState>>()));
         assert!(transitions[2..=3].contains(&type_name::<OnExit<ManualState>>()));

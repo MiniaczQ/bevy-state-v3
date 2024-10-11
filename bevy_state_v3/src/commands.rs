@@ -1,5 +1,4 @@
 //! Helper methods for interacting with states.
-//!
 
 use bevy_ecs::{
     entity::Entity,

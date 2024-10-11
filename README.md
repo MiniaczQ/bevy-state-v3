@@ -54,21 +54,21 @@ Out of scope:
 
 # Major implementation changes
 
-`State` trait contains additional:
+State traits merged into `State` which contains additional:
 - `type Update` - data structure for updating this state, basic impls include `()`, `Option<S>` and `Option<Option<S>>`.
 - `type Repr` - optionality of this state, impl for `S` and `Option<S>`.
 
-`StateData<S>` is a new component, that replaces `State<S>` and `NextState<S>` resources.
+New `StateData<S>` component replaces `State<S>` and `NextState<S>` resources.
 Being a component is required for local state machines.
 Additional data is stored:
 - buffered "is_updated" flag,
 - buffered last state and reentry flag.
 
-`GlobalMarker` for marking global state entities.
+Component `GlobalMarker` for entity that stores global state.
 This change may not belong here, but is required in some form.
 Technically this belongs to `bevy_ecs` for when resources are stored as entities?
 
-`OnEnter`, `OnExit`, etc. schedules have been replaced with observable events.
+Transition schedules `OnEnter`, `OnExit` have been replaced with analogous observable events.
 This means filtering whether the correct state was entered requires a check in the observer.
 
 # Migration

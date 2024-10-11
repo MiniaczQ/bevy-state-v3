@@ -10,8 +10,8 @@ fn main() {
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
         // We configure re-enter transitions, so we can update text when the state changes.
-        .register_state::<MyState>(
-            StateConfig::empty().with_on_enter(on_reenter_transition::<MyState>),
+        .register_state(
+            StateConfig::<MyState>::empty().with_on_enter(on_reenter_transition::<MyState>),
         )
         .init_state(None, None::<MyState>)
         .add_systems(Startup, setup)

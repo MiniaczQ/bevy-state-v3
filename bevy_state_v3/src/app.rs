@@ -1,5 +1,4 @@
 //! Integration with Bevy App.
-//!
 
 use bevy_app::{MainScheduleOrder, Plugin, PreStartup, PreUpdate};
 

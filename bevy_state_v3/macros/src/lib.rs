@@ -1,5 +1,5 @@
-// FIXME(3492): remove once docs are ready
-#![allow(missing_docs)]
+//! Macros for deriving `State`.
+
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 extern crate proc_macro;
@@ -63,6 +63,18 @@ struct Shared<'a> {
     struct_name: &'a Ident,
 }
 
+/// Macro for deriving `State` trait.
+///
+/// By default, this will create a root state which:
+/// - has no dependencies,
+/// - is non-optional (always exists),
+/// - mutation is done only through replacement with the new value.
+///
+/// If attributed with `#[dependency(MyState = MyState::Foo)]`, the state will:
+/// - have one dependency (`MyState`),
+/// - be optional (exists only if `MyState::Foo`),
+/// - use default value for initial state,
+/// - be mutated by replacement if exists.
 #[proc_macro_derive(State, attributes(dependency))]
 pub fn derive_state(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);

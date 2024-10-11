@@ -10,8 +10,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        .register_state::<MyState>(
-            StateConfig::empty().with_on_enter(on_reenter_transition::<MyState>),
+        .register_state(
+            StateConfig::<MyState>::empty().with_on_enter(on_reenter_transition::<MyState>),
         )
         .init_state(None, MyState::Alice)
         .add_systems(Startup, setup)

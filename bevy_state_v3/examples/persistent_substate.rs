@@ -11,8 +11,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        .register_state::<InnerState>(StateConfig::empty())
-        .register_state::<OuterState>(StateConfig::empty())
+        .register_state(StateConfig::<InnerState>::empty())
+        .register_state(StateConfig::<OuterState>::empty())
         .init_state(None, InnerState::Enabled)
         .init_state(None, Some(OuterState::Enabled))
         .add_systems(Startup, setup)

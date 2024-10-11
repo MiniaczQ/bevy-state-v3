@@ -12,9 +12,9 @@ fn main() {
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
         // We opt-out of default behaviors like state transition events or scoped entities.
-        .register_state::<BehaviorState>(StateConfig::empty())
-        .register_state::<StandingState>(StateConfig::empty())
-        .register_state::<MovingState>(StateConfig::empty())
+        .register_state(StateConfig::<BehaviorState>::empty())
+        .register_state(StateConfig::<StandingState>::empty())
+        .register_state(StateConfig::<MovingState>::empty())
         .add_systems(Startup, setup_enemies)
         .add_systems(Update, (enemies_standing, enemies_moving).chain())
         .run();
