@@ -26,22 +26,25 @@ Features:
       Update order is still the same; exit from leaf to root, then enter from root to leaf.  
       This fits well with states as entities, allowing observation of global and local events.  
       The drawback is the minor additional boilerplate to filter event data.
-- [x] State scoped entities.
+- [x] State scoped entities.  
       Same behavior as current crate, tweaked configuration.
 - [x] Global (one per world) and local (one per entity) state machines.  
       Current crate supports only global states.
-- [x] Extensible state configuration (transitions, state scoped, etc.),
-      Current crate is missing some configuration (opt-out transitions), some is also fragmented away from state registration (state scoped).
-- [x] Command based state updates for basic state types.
+- [x] Extensible state configuration (transitions, state scoped, etc.),  
+      Current crate is missing some configuration (opt-out transitions),  
+      some is also fragmented away from state registration (state scoped).
+- [x] Command based state updates for basic state types.  
       Similar to the existing one.
+- [x] Derive macro for simple root and sub states.  
+      Much like current macro, but uses the state optionality.
 - [x] Examples to cover both old and new features.
-- [ ] Feature gated `serde` support.
+- [ ] Feature gated `serde` support.  
       Current crate does not provide it.
-- [ ] Reflection.
+- [ ] Reflection.  
       Similar to current crate, but on components instead.
 
 Out of scope:
-- Removing state machinery.
+- Removing state machinery.  
   Requires systems as entities.
 - Dynamic dependencies and update function.  
   Probably through an additional generic component, to overwrite original behavior.  
