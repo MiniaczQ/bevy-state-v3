@@ -187,7 +187,7 @@ fn orbit_filtered<M: Component>(
 ) {
     let parent = queries.p0().1.parent;
     let center = queries.p1().get(parent).unwrap().translation;
-    let delta = time.delta_seconds();
+    let delta = time.delta_secs();
     let (transform, orbit) = &mut *queries.p0();
     orbit.angle = (orbit.angle + orbit.speed * delta) % core::f32::consts::TAU;
     let offset = Quat::from_axis_angle(Vec3::Z, orbit.angle) * Vec3::new(orbit.distance, 0.0, 0.0);

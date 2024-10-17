@@ -222,7 +222,7 @@ fn enemies_standing(
     )>,
     time: Res<Time>,
 ) {
-    let delta = time.delta_seconds();
+    let delta = time.delta_secs();
     let mut rng = thread_rng();
 
     // First we rotate all standing enemies.
@@ -283,7 +283,7 @@ fn enemies_moving(
     )>,
     time: Res<Time>,
 ) {
-    let delta = time.delta_seconds();
+    let delta = time.delta_secs();
     let mut rng = thread_rng();
     let mut query = queries.p0();
     let mut updates = vec![];

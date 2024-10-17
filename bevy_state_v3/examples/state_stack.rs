@@ -179,7 +179,25 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
     // Spawn text for displaying state.
-    commands.spawn((Text::new(""), StateLabel));
+    commands
+        .spawn(
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    overflow: Overflow::scroll_y(),
+                    width: Val::Vw(100.0),
+                    height: Val::Vh(100.0),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                ..default()
+            },
+        )
+        .with_child((
+            Text::new(""),
+            TextLayout::new_with_justify(JustifyText::Center),
+            StateLabel,
+        ));
 }
 
 /// User controls.
@@ -213,11 +231,11 @@ fn update_text(
     _: Trigger<OnReenter<MyState>>,
     state: Single<&StateData<MyState>>,
     label: Single<Entity, With<StateLabel>>,
-    mut text: UiTextWriter,
+    mut text: TextUiWriter,
 ) {
     let mut content = String::new();
     for state in state.update().stack.iter().chain(state.current().iter()) {
-        content.push_str(&format!("{:?} ", state));
+        content.push_str(&format!("{:?}\n", state));
     }
     *text.text(*label, 0) = content;
 }

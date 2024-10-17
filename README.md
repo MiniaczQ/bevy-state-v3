@@ -74,3 +74,20 @@ This means filtering whether the correct state was entered requires a check in t
 # Migration
 
 TODO
+
+
+# Questions
+
+1. Reducing boilerplate in transition observers.
+  - Filtering un-/targeted.
+  - Filtering current state.
+
+2. Initial transitions.
+  - State added during startup vs state added at runtime.
+  - When to emit it?
+  - Implementation details.
+
+3. Filtering global state.
+  - Move the component to `bevy_ecs` or keep it here for now?
+
+
