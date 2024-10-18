@@ -1,10 +1,11 @@
-//! In this example states are used to model a simple behavioral tree of enemy entities.
+//! States here are used to model a simple behavioral tree of .
 //! The enemies can either stand and look around or move to selected position.
 //! To increase performance, we opt-out of command-based updates and resort to manually setting it.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;
-use rand::{seq::SliceRandom, thread_rng, Rng, RngCore};
+use rand::{seq::SliceRandom, Rng, RngCore};
+use rand_mt::Mt64;
 
 fn main() {
     App::new()
@@ -15,6 +16,9 @@ fn main() {
         .register_state(StateConfig::<BehaviorState>::empty())
         .register_state(StateConfig::<StandingState>::empty())
         .register_state(StateConfig::<MovingState>::empty())
+        // We use cryptographicaly non-safe(!) random number generator
+        // and seed it for repeatable results.
+        .insert_resource(Rand(Box::new(Mt64::new(0))))
         .add_systems(Startup, setup_enemies)
         .add_systems(Update, (enemies_standing, enemies_moving).chain())
         .run();
@@ -42,6 +46,9 @@ struct PersistentUpdate<S: State> {
     should_update: bool,
     value: S,
 }
+
+#[derive(Resource)]
+struct Rand(Box<dyn RngCore + Send + Sync + 'static>);
 
 impl<S: State + Default> StateUpdate for PersistentUpdate<S> {
     fn should_update(&self) -> bool {
@@ -93,7 +100,7 @@ impl StandingState {
     /// Helper for creating random states.
     pub fn from_rng(rng: &mut dyn RngCore) -> Self {
         Self {
-            looking_speed: rng.gen_range(0.2..=1.0) * [-1.0, 1.0].choose(rng).unwrap(),
+            looking_speed: rng.gen_range(3.0..=5.0) * [-1.0, 1.0].choose(rng).unwrap(),
             vision_cos: rng.gen_range(0.99..=0.999),
         }
     }
@@ -129,13 +136,13 @@ impl MovingState {
     /// Helper for creating random states.
     pub fn from_rng(rng: &mut dyn RngCore, target: Vec2) -> Self {
         Self {
-            target: target + Vec2::new(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0)),
-            speed: rng.gen_range(10.0..=30.0),
+            target: target,
+            speed: rng.gen_range(30.0..=50.0),
         }
     }
 }
 
-fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
+fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>, mut rng: ResMut<Rand>) {
     println!();
     println!("There is no human input in this example.");
     println!("The enemy ships will either look around for other ships");
@@ -147,7 +154,6 @@ fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
 
     // Create enemies.
     let enemy_count = 500;
-    let mut rng = thread_rng();
     let texture = assets.load("textures/simplespace/ship_C.png");
     for i in 0..enemy_count {
         commands.spawn((
@@ -158,58 +164,17 @@ fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>) {
                 ..default()
             },
             Transform::from_xyz(
-                rng.gen_range(-1000.0..=1000.0),
-                rng.gen_range(-600.0..=600.0),
+                rng.0.gen_range(-1000.0..=1000.0),
+                rng.0.gen_range(-600.0..=600.0),
                 0.0,
             )
-            .looking_to(Vec3::Z, Dir2::from_rng(&mut rng).extend(0.0)),
+            .looking_to(Vec3::Z, Dir2::from_rng(&mut rng.0).extend(0.0)),
             Enemy,
             // All states are attached directly.
             BehaviorState::Standing.into_data(),
-            Some(StandingState::from_rng(&mut rng)).into_data(),
+            Some(StandingState::from_rng(&mut rng.0)).into_data(),
             None::<MovingState>.into_data(),
         ));
-    }
-}
-
-/// Reservoir sampling allows us to select one random sample from an arbitrarly large set.
-/// In this example, it is used to target one enemy out of many in the vision cone.
-struct ReservoirSampler<'r, S> {
-    rng: &'r mut dyn RngCore,
-    sample: Option<S>,
-    weight_sum: f32,
-}
-
-impl<'r, S> ReservoirSampler<'r, S> {
-    /// Creates a new sampler with provided RNG.
-    pub fn new(rng: &'r mut dyn RngCore) -> Self {
-        Self {
-            rng,
-            sample: None,
-            weight_sum: 0.0,
-        }
-    }
-
-    /// Adds a single sample to the reservoir.
-    /// The `weight` specifies how likely a sample is to be picked compared to other weights.
-    pub fn add(&mut self, sample: S, weight: f32) {
-        if self.sample.is_none() {
-            // If this is the first sample, always select it.
-            self.sample = Some(sample);
-            self.weight_sum = weight;
-        } else {
-            // Every time a sample is added, we decide whether to pick it over the currently selected sample.
-            self.weight_sum += weight;
-            if self.rng.gen_bool((weight / self.weight_sum) as f64) {
-                self.sample = Some(sample);
-            }
-        }
-    }
-
-    /// Consumes the reservoir and returns the sample.
-    /// If no samples were added, this returns [`None`].
-    pub fn take(self) -> Option<S> {
-        self.sample
     }
 }
 
@@ -221,9 +186,9 @@ fn enemies_standing(
         Populated<(&mut StateData<BehaviorState>, &mut StateData<MovingState>)>,
     )>,
     time: Res<Time>,
+    mut rng: ResMut<Rand>,
 ) {
     let delta = time.delta_secs();
-    let mut rng = thread_rng();
 
     // First we rotate all standing enemies.
     let mut query = queries.p0();
@@ -240,7 +205,8 @@ fn enemies_standing(
         let Some(state) = state.current() else {
             continue;
         };
-        let mut reservoir = ReservoirSampler::new(&mut rng);
+        let mut reservoir_rng = Mt64::new(rng.0.gen());
+        let mut reservoir = util::ReservoirSampler::new(&mut reservoir_rng);
         for (target, target_trs, _) in query.iter() {
             if search == target {
                 continue;
@@ -255,12 +221,17 @@ fn enemies_standing(
             let cos = front.dot(direction);
             if state.vision_cos < cos {
                 // Every enemy within vision is added to the reservoir to be potentially picked.
-                reservoir.add(target_trs.translation.xy(), 1.0);
+                let target_pos =
+                    search_trs.translation.xy() + offset.xy() * rng.0.gen_range(0.0..1.5);
+                reservoir.add(target_pos, distance);
             }
         }
         // If found, the selected enemy's position becomes the target.
-        if let Some(target) = reservoir.take() {
-            updates.push((search, target));
+        // We can unwrap safely, because we always initialize the reservoir with "no enemy".
+        if let (_rng, weight_sum, Some(target)) = reservoir.take() {
+            if weight_sum > 10000.0 {
+                updates.push((search, target));
+            }
         }
     }
 
@@ -271,7 +242,7 @@ fn enemies_standing(
         *behavior.update_mut() = Some(BehaviorState::Moving);
         moving
             .update_mut()
-            .set(MovingState::from_rng(&mut rng, target));
+            .set(MovingState::from_rng(&mut rng.0, target));
     }
 }
 
@@ -282,9 +253,9 @@ fn enemies_moving(
         Populated<(&mut StateData<BehaviorState>, &mut StateData<StandingState>)>,
     )>,
     time: Res<Time>,
+    mut rng: ResMut<Rand>,
 ) {
     let delta = time.delta_secs();
-    let mut rng = thread_rng();
     let mut query = queries.p0();
     let mut updates = vec![];
     for (entity, mut transform, state) in query.iter_mut() {
@@ -311,6 +282,51 @@ fn enemies_moving(
     for entity in updates {
         let (mut behavior, mut moving) = query.get_mut(entity).unwrap();
         *behavior.update_mut() = Some(BehaviorState::Standing);
-        moving.update_mut().set(StandingState::from_rng(&mut rng));
+        moving.update_mut().set(StandingState::from_rng(&mut rng.0));
+    }
+}
+
+mod util {
+    use rand::{Rng, RngCore};
+
+    /// Reservoir sampling allows us to select one random sample from an arbitrarly large set.
+    /// In this example, it is used to target one enemy out of many in the vision cone.
+    pub struct ReservoirSampler<'r, S> {
+        rng: &'r mut dyn RngCore,
+        sample: Option<S>,
+        weight_sum: f32,
+    }
+
+    impl<'r, S> ReservoirSampler<'r, S> {
+        /// Creates a new sampler with provided RNG.
+        pub fn new(rng: &'r mut dyn RngCore) -> Self {
+            Self {
+                rng,
+                sample: None,
+                weight_sum: 0.0,
+            }
+        }
+
+        /// Adds a single sample to the reservoir.
+        /// The `weight` specifies how likely a sample is to be picked compared to other weights.
+        pub fn add(&mut self, sample: S, weight: f32) {
+            if self.sample.is_none() {
+                // If this is the first sample, always select it.
+                self.sample = Some(sample);
+                self.weight_sum = weight;
+            } else {
+                // Every time a sample is added, we decide whether to pick it over the currently selected sample.
+                self.weight_sum += weight;
+                if self.rng.gen_bool((weight / self.weight_sum) as f64) {
+                    self.sample = Some(sample);
+                }
+            }
+        }
+
+        /// Consumes the reservoir and returns the sample.
+        /// If no samples were added, this returns [`None`].
+        pub fn take(self) -> (&'r mut dyn RngCore, f32, Option<S>) {
+            (self.rng, self.weight_sum, self.sample)
+        }
     }
 }

@@ -63,7 +63,8 @@ bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, f
     "webgl2",
     "sysinfo_plugin",
 ] }
-rand = "0.8.5"
+rand = "0.8"
+rand_mt = "4"
 
 [[example]]
 name = "global_state"
