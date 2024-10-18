@@ -1,332 +1,357 @@
-//! States here are used to model a simple behavioral tree of .
-//! The enemies can either stand and look around or move to selected position.
-//! To increase performance, we opt-out of command-based updates and resort to manually setting it.
+//! This example shows how state hierarchy can be composed to achieve simple enemy AI.
+//! The enemy will start by rotating around, while looking for the player ship.
+//! When player ship is found, it will be chased until out of sight, after
+//! which the enemy will briefly rest, before looking for player again.
 
-use bevy::{prelude::*, sprite::Anchor};
+use std::time::Duration;
+
+use bevy::{
+    color::palettes::tailwind::{BLUE_300, RED_300},
+    prelude::*,
+    sprite::Anchor,
+};
 use bevy_state_v3::prelude::*;
-use rand::{seq::SliceRandom, Rng, RngCore};
-use rand_mt::Mt64;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        // We opt-out of default behaviors like state transition events or scoped entities.
-        .register_state(StateConfig::<BehaviorState>::empty())
-        .register_state(StateConfig::<StandingState>::empty())
-        .register_state(StateConfig::<MovingState>::empty())
-        // We use cryptographicaly non-safe(!) random number generator
-        // and seed it for repeatable results.
-        .insert_resource(Rand(Box::new(Mt64::new(0))))
-        .add_systems(Startup, setup_enemies)
-        .add_systems(Update, (enemies_standing, enemies_moving).chain())
+        // Opt-out of default state transitions and state scoped entities.
+        .register_state(StateConfig::<Behavior>::empty())
+        .register_state(StateConfig::<Chase>::empty())
+        .register_state(StateConfig::<Rest>::empty())
+        .add_systems(Startup, setup)
+        .add_systems(
+            Update,
+            (player_move, enemy_lookout, enemy_chase, enemy_rest).chain(),
+        )
         .run();
 }
 
-/// Marker for our enemies.
+/// Player marker component.
+#[derive(Component)]
+struct Player;
+
+/// Enemy marker component.
 #[derive(Component)]
 struct Enemy;
 
-/// Root behavior state.
-/// An enemy entity will stand and look around, once they find another enemy
-/// entity, they'll try to move to the position in which they've seen them.
+/// Root state of enemy behavior.
 #[derive(State, PartialEq, Debug, Clone)]
-enum BehaviorState {
-    /// Looking around for other enemies.
-    Standing,
-    /// Moving to a target position.
-    Moving,
+enum Behavior {
+    /// Looking for player, no additional data.
+    Lookout,
+    /// Chasing player, substate stores the entity.
+    Chase,
+    /// Resting, substate stores timestamp when rest is over.
+    Rest,
 }
 
-/// Persistent update similar to that in `persistent_substate` example.
-/// The main difference is focus on manually setting updates rather than using a command.
-#[derive(Debug, Default)]
-struct PersistentUpdate<S: State> {
-    should_update: bool,
-    value: S,
+/// Vision defined by a circle/sphere sector.
+#[derive(Component)]
+struct Vision {
+    /// Minimum value of dot product between `front` and `to_target` vectors to be within the vision angle.
+    min_dot_product: f32,
+    /// Maximum visibility distance.
+    max_distance: f32,
 }
 
-#[derive(Resource)]
-struct Rand(Box<dyn RngCore + Send + Sync + 'static>);
-
-impl<S: State + Default> StateUpdate for PersistentUpdate<S> {
-    fn should_update(&self) -> bool {
-        self.should_update
+impl Vision {
+    /// Creates a new vision descriptor.
+    fn new(half_angle: f32, max_distance: f32) -> Self {
+        Self {
+            min_dot_product: half_angle.to_radians().cos(),
+            max_distance,
+        }
     }
 
-    fn post_update(&mut self) {
-        self.should_update = false;
+    /// Calculates whether `there` is visible from `here` while looking towards `front`.
+    fn is_visible(&self, here: Vec3, front: Dir3, there: Vec3) -> bool {
+        let delta = there - here;
+        let distance = delta.length();
+        let rcp = distance.recip();
+        if !rcp.is_finite() || rcp == 0.0 {
+            return false;
+        }
+        let direction = delta * rcp;
+        distance < self.max_distance && self.min_dot_product < direction.dot(*front)
     }
 }
 
-impl<S: State> PersistentUpdate<S> {
-    /// Sets update with provided state.
-    pub fn set(&mut self, value: S) {
-        self.should_update = true;
-        self.value = value;
-    }
+/// Chase state specifies which entity the enemy is after.
+/// In this example it'll always be the player.
+#[derive(PartialEq, Debug, Clone)]
+struct Chase {
+    target: Entity,
 }
 
-/// Looking around with specific speed.
-/// If another enemy is spotted, the state will change to moving.
-#[derive(Default, PartialEq, Debug, Clone)]
-struct StandingState {
-    /// Rotation speed.
-    looking_speed: f32,
-    /// Size of the vision cone represented by cosine of the angle.
-    vision_cos: f32,
-}
-
-impl State for StandingState {
-    type Dependencies = BehaviorState;
-    // By using a persistent update instead of `Option<S>` we ensure that
-    // there is always a valid substate value we can use.
-    type Update = PersistentUpdate<Self>;
+/// Manually implementing state allows us to add additional requirements.
+impl State for Chase {
+    type Dependencies = Behavior;
+    type Update = Option<Self>;
     type Repr = Option<Self>;
 
     fn update(
         state: &mut StateData<Self>,
-        behavior: StateSetData<'_, Self::Dependencies>,
+        dependencies: StateSetData<'_, Self::Dependencies>,
     ) -> Self::Repr {
-        match behavior.current() {
-            BehaviorState::Standing => Some(state.update().value.clone()),
+        let behavior = dependencies;
+        let current = behavior.current();
+        let next = state.update_mut().take();
+        // We require ourselves to provide the initial state.
+        match (current, next) {
+            (Behavior::Chase, next) => {
+                Some(next.expect("Changed state to `Chase` without specifying it's parameters."))
+            }
             _ => None,
         }
     }
 }
 
-impl StandingState {
-    /// Helper for creating random states.
-    pub fn from_rng(rng: &mut dyn RngCore) -> Self {
-        Self {
-            looking_speed: rng.gen_range(3.0..=5.0) * [-1.0, 1.0].choose(rng).unwrap(),
-            vision_cos: rng.gen_range(0.99..=0.999),
-        }
-    }
+/// The resting state remembers when the resting period ends.
+/// We want to store a timestamp rather than a timer, to not update the state
+/// every frame. Alternatively, we can store the timer in custom [`State::Update`]
+/// and keep the state type itself as a Zero Sized Type (ZST).
+#[derive(PartialEq, Debug, Clone)]
+struct Rest {
+    until: Duration,
 }
 
-/// Moving towards target position.
-/// Once at target position, go back to standing still and looking around.
-#[derive(Default, PartialEq, Debug, Clone)]
-struct MovingState {
-    /// Target position.
-    target: Vec2,
-    /// Speed of movement.
-    speed: f32,
-}
-
-impl State for MovingState {
-    type Dependencies = BehaviorState;
-    type Update = PersistentUpdate<Self>;
+impl State for Rest {
+    type Dependencies = Behavior;
+    type Update = Option<Self>;
     type Repr = Option<Self>;
 
     fn update(
         state: &mut StateData<Self>,
-        behavior: StateSetData<'_, Self::Dependencies>,
+        dependencies: StateSetData<'_, Self::Dependencies>,
     ) -> Self::Repr {
-        match behavior.current() {
-            BehaviorState::Moving => Some(state.update().value.clone()),
+        let behavior = dependencies;
+        let current = behavior.current();
+        let next = state.update_mut().take();
+        match (current, next) {
+            (Behavior::Rest, next) => {
+                Some(next.expect("Changed state to `Rest` without specifying it's parameters."))
+            }
             _ => None,
         }
     }
 }
 
-impl MovingState {
-    /// Helper for creating random states.
-    pub fn from_rng(rng: &mut dyn RngCore, target: Vec2) -> Self {
-        Self {
-            target: target,
-            speed: rng.gen_range(30.0..=50.0),
-        }
-    }
-}
-
-fn setup_enemies(mut commands: Commands, assets: Res<AssetServer>, mut rng: ResMut<Rand>) {
+fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     println!();
-    println!("There is no human input in this example.");
-    println!("The enemy ships will either look around for other ships");
-    println!("or move to a location where they spoted a ship.");
+    println!("In this example the player ship moves towards the mouse cursor.");
+    println!("The enemies are on the lookout for the player. They will chase him");
+    println!("until he's out of sight, then rest a bit and go back to lookout.");
     println!();
 
     // Add camera.
     commands.spawn(Camera2d);
 
+    // Create the player.
+    let texture = assets.load("textures/simplespace/enemy_A.png");
+    commands.spawn((
+        Sprite {
+            image: texture.clone(),
+            color: BLUE_300.into(),
+            anchor: Anchor::Center,
+            ..default()
+        },
+        Transform::from_xyz(0.0, 200.0, 0.0),
+        Player,
+    ));
+
     // Create enemies.
-    let enemy_count = 500;
     let texture = assets.load("textures/simplespace/ship_C.png");
-    for i in 0..enemy_count {
+    for i in 0..10 {
+        let x = i as f32 * 100.0 - 450.0;
         commands.spawn((
             Sprite {
                 image: texture.clone(),
-                color: Hsla::hsl(i as f32 * 360.0 / enemy_count as f32, 0.5, 0.5).into(),
+                color: RED_300.into(),
                 anchor: Anchor::Center,
                 ..default()
             },
-            Transform::from_xyz(
-                rng.0.gen_range(-1000.0..=1000.0),
-                rng.0.gen_range(-600.0..=600.0),
-                0.0,
-            )
-            .looking_to(Vec3::Z, Dir2::from_rng(&mut rng.0).extend(0.0)),
+            Transform::from_xyz(x, -200.0, 0.0),
             Enemy,
-            // All states are attached directly.
-            BehaviorState::Standing.into_data(),
-            Some(StandingState::from_rng(&mut rng.0)).into_data(),
-            None::<MovingState>.into_data(),
+            Vision::new(30.0, 400.0),
+            // All states are attached directly, without the use of commands.
+            Behavior::Lookout.into_data(),
+            None::<Chase>.into_data(),
+            None::<Rest>.into_data(),
         ));
     }
 }
 
-/// Rotates standing enemies and makes them move once they select a target.
-fn enemies_standing(
-    mut queries: ParamSet<(
-        Populated<(&mut Transform, &StateData<StandingState>), With<Enemy>>,
-        Populated<(Entity, &Transform, &StateData<StandingState>), With<Enemy>>,
-        Populated<(&mut StateData<BehaviorState>, &mut StateData<MovingState>)>,
-    )>,
+/// Time it takes to travel ~63.2% of the way towards the cursor.
+const PLAYER_MOVE_TIME_CONSTANT: f32 = 0.3;
+
+/// Player movement uses exponential smoothing between the player position and the cursor position.
+/// https://en.wikipedia.org/wiki/Exponential_smoothing#Time_constant
+fn player_move(
+    mut transform: Single<&mut Transform, With<Player>>,
+    window: Single<&Window>,
+    camera: Single<(&Camera, &GlobalTransform)>,
     time: Res<Time>,
-    mut rng: ResMut<Rand>,
 ) {
+    let Some(position) = window.cursor_position() else {
+        return;
+    };
+    let Ok(ray) = camera.0.viewport_to_world(camera.1, position) else {
+        return;
+    };
+    let target = ray.origin.with_z(0.0);
+    let smoothing_factor = time.delta_secs() / PLAYER_MOVE_TIME_CONSTANT;
+    let new_transform =
+        smoothing_factor * target + (1.0 - smoothing_factor) * transform.translation;
+
+    if (new_transform - transform.translation).length() > 0.1 {
+        transform.translation = new_transform;
+        look_to(&mut transform, target);
+    }
+}
+
+/// How fast the enemy rotates in radians per second.
+const ENEMY_ROTATION_SPEED: f32 = 1.0;
+
+/// Rotate enemies and start chasing player if in sight.
+fn enemy_lookout(
+    mut enemies: Populated<
+        (
+            &mut Transform,
+            &Vision,
+            &mut StateData<Behavior>,
+            &mut StateData<Chase>,
+        ),
+        (With<Enemy>, Without<Player>),
+    >,
+    player: Single<(Entity, &Transform), With<Player>>,
+    time: Res<Time>,
+) {
+    let (player_entity, player_transform) = *player;
     let delta = time.delta_secs();
 
-    // First we rotate all standing enemies.
-    let mut query = queries.p0();
-    for (mut transform, state) in query.iter_mut() {
-        if let Some(state) = state.current() {
-            transform.rotation *= Quat::from_axis_angle(Vec3::Z, state.looking_speed * delta);
-        }
-    }
-
-    // Then we detect which standing enemies see other enemies.
-    let query = queries.p1();
-    let mut updates = vec![];
-    for (search, search_trs, state) in query.iter() {
-        let Some(state) = state.current() else {
+    for (mut transform, vision, mut behavior, mut chase) in enemies.iter_mut() {
+        let Behavior::Lookout = behavior.current() else {
             continue;
         };
-        let mut reservoir_rng = Mt64::new(rng.0.gen());
-        let mut reservoir = util::ReservoirSampler::new(&mut reservoir_rng);
-        for (target, target_trs, _) in query.iter() {
-            if search == target {
-                continue;
-            }
-            let front = search_trs.up();
-            let offset = target_trs.translation - search_trs.translation;
-            let distance = offset.length();
-            if distance < 1.0 {
-                continue;
-            }
-            let direction = offset / distance;
-            let cos = front.dot(direction);
-            if state.vision_cos < cos {
-                // Every enemy within vision is added to the reservoir to be potentially picked.
-                let target_pos =
-                    search_trs.translation.xy() + offset.xy() * rng.0.gen_range(0.0..1.5);
-                reservoir.add(target_pos, distance);
-            }
-        }
-        // If found, the selected enemy's position becomes the target.
-        // We can unwrap safely, because we always initialize the reservoir with "no enemy".
-        if let (_rng, weight_sum, Some(target)) = reservoir.take() {
-            if weight_sum > 10000.0 {
-                updates.push((search, target));
-            }
-        }
-    }
 
-    // Finally, to reduce command calling overhead, we set the state update manually.
-    let mut query = queries.p2();
-    for (entity, target) in updates {
-        let (mut behavior, mut moving) = query.get_mut(entity).unwrap();
-        *behavior.update_mut() = Some(BehaviorState::Moving);
-        moving
-            .update_mut()
-            .set(MovingState::from_rng(&mut rng.0, target));
+        transform.rotate_z(ENEMY_ROTATION_SPEED * delta);
+
+        if vision.is_visible(
+            transform.translation,
+            transform.up(),
+            player_transform.translation,
+        ) {
+            *behavior.update_mut() = Some(Behavior::Chase);
+            *chase.update_mut() = Some(Chase {
+                target: player_entity,
+            })
+        }
     }
 }
 
-/// Moves moving enemies until they reach their target position.
-fn enemies_moving(
+/// The closest distance enemy will stay at from the target.
+const CHASE_MIN_DISTANCE: f32 = 50.0;
+
+/// How quickly can the enemy move per second.
+const CHASE_SPEED: f32 = 100.0;
+
+/// Chasing of the target entity.
+/// The enemy will stop chasing and rest if:
+/// - entity stops existing,
+/// - entity gets out of sight.
+fn enemy_chase(
     mut queries: ParamSet<(
-        Populated<(Entity, &mut Transform, &StateData<MovingState>), With<Enemy>>,
-        Populated<(&mut StateData<BehaviorState>, &mut StateData<StandingState>)>,
+        (
+            Populated<(Entity, &StateData<Chase>), With<Enemy>>,
+            Populated<&Transform>,
+        ),
+        Populated<(
+            &mut Transform,
+            &Vision,
+            &mut StateData<Behavior>,
+            &mut StateData<Rest>,
+        )>,
     )>,
     time: Res<Time>,
-    mut rng: ResMut<Rand>,
 ) {
     let delta = time.delta_secs();
-    let mut query = queries.p0();
-    let mut updates = vec![];
-    for (entity, mut transform, state) in query.iter_mut() {
-        if let Some(state) = state.current() {
-            let offset = state.target.extend(0.0) - transform.translation;
-            let distance = offset.length();
-            let direction = offset / distance;
-            let max_step = delta * state.speed;
-            transform.rotation = Quat::from_mat3(&Mat3::from_cols(
-                -direction.cross(Vec3::Z),
-                direction,
-                -Vec3::Z,
-            ));
-            transform.translation += direction * max_step.min(distance);
+    let now = time.elapsed();
 
-            if distance <= max_step {
-                updates.push(entity);
-            }
-        }
+    let (enemies, transforms) = queries.p0();
+    let mut targets = vec![];
+    for (entity, chase) in enemies.iter() {
+        let Some(Chase { target }) = *chase.current() else {
+            continue;
+        };
+        let maybe_target = transforms.get(target).ok().map(|t| t.translation);
+        targets.push((entity, maybe_target));
     }
 
-    // Again setting state update manually.
-    let mut query = queries.p1();
-    for entity in updates {
-        let (mut behavior, mut moving) = query.get_mut(entity).unwrap();
-        *behavior.update_mut() = Some(BehaviorState::Standing);
-        moving.update_mut().set(StandingState::from_rng(&mut rng.0));
+    let mut enemies = queries.p1();
+    for (entity, maybe_target) in targets {
+        let (mut transform, vision, mut behavior, mut rest) = enemies.get_mut(entity).unwrap();
+
+        // Rest if target no longer exists.
+        let Some(target) = maybe_target else {
+            *behavior.update_mut() = Some(Behavior::Rest);
+            *rest.update_mut() = Some(Rest {
+                until: now + Duration::from_secs(2),
+            });
+            continue;
+        };
+
+        // Rest if target is out of sight.
+        if !vision.is_visible(transform.translation, transform.up(), target) {
+            *behavior.update_mut() = Some(Behavior::Rest);
+            *rest.update_mut() = Some(Rest {
+                until: now + Duration::from_secs(2),
+            });
+            continue;
+        }
+
+        // Move and rotate towards target.
+        let offset = target - transform.translation;
+        let distance = offset.length();
+        let rcp = distance.recip();
+        if rcp.is_finite() && rcp > 0.0 {
+            let direction = offset / distance;
+            let step = (distance - CHASE_MIN_DISTANCE).min(CHASE_SPEED * delta);
+            transform.translation += direction * step;
+        }
+
+        look_to(&mut transform, target);
     }
 }
 
-mod util {
-    use rand::{Rng, RngCore};
+/// After resting enemies go back to lookout.
+fn enemy_rest(
+    mut enemies: Populated<(&mut StateData<Behavior>, &StateData<Rest>), With<Enemy>>,
+    time: Res<Time>,
+) {
+    let now = time.elapsed();
 
-    /// Reservoir sampling allows us to select one random sample from an arbitrarly large set.
-    /// In this example, it is used to target one enemy out of many in the vision cone.
-    pub struct ReservoirSampler<'r, S> {
-        rng: &'r mut dyn RngCore,
-        sample: Option<S>,
-        weight_sum: f32,
-    }
+    for (mut behavior, rest) in enemies.iter_mut() {
+        let Some(Rest { until }) = *rest.current() else {
+            continue;
+        };
 
-    impl<'r, S> ReservoirSampler<'r, S> {
-        /// Creates a new sampler with provided RNG.
-        pub fn new(rng: &'r mut dyn RngCore) -> Self {
-            Self {
-                rng,
-                sample: None,
-                weight_sum: 0.0,
-            }
-        }
-
-        /// Adds a single sample to the reservoir.
-        /// The `weight` specifies how likely a sample is to be picked compared to other weights.
-        pub fn add(&mut self, sample: S, weight: f32) {
-            if self.sample.is_none() {
-                // If this is the first sample, always select it.
-                self.sample = Some(sample);
-                self.weight_sum = weight;
-            } else {
-                // Every time a sample is added, we decide whether to pick it over the currently selected sample.
-                self.weight_sum += weight;
-                if self.rng.gen_bool((weight / self.weight_sum) as f64) {
-                    self.sample = Some(sample);
-                }
-            }
-        }
-
-        /// Consumes the reservoir and returns the sample.
-        /// If no samples were added, this returns [`None`].
-        pub fn take(self) -> (&'r mut dyn RngCore, f32, Option<S>) {
-            (self.rng, self.weight_sum, self.sample)
+        if until < now {
+            *behavior.update_mut() = Some(Behavior::Lookout);
         }
     }
+}
+
+/// Helper method for setting rotation based on a target position.
+fn look_to(transform: &mut Transform, target: Vec3) {
+    let Some(front) = (target - transform.translation).try_normalize() else {
+        return;
+    };
+    transform.rotation = Quat::from_mat3(&Mat3 {
+        x_axis: -front.cross(Vec3::Z),
+        y_axis: front,
+        z_axis: -Vec3::Z,
+    });
 }
