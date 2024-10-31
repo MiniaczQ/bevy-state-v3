@@ -27,27 +27,7 @@ pub fn state_changed_to<R: StateRepr>(target: R) -> impl Fn(Global<&StateData<R:
     }
 }
 
-/// Returns from an observer if trigger is targeted.
-#[macro_export]
-macro_rules! return_if_targeted {
-    ($trigger: ident) => {
-        if $trigger.entity() != Entity::PLACEHOLDER {
-            return;
-        }
-    };
-}
-
-/// Returns from an observer if state transition current value does not match.
-#[macro_export]
-macro_rules! return_if_not_current {
-    ($trigger: ident, $value: expr) => {
-        if $trigger.current != $value {
-            return;
-        }
-    };
-}
-
-// TODO: Move to `bevy_ecs` when implementing resources as entities.
+// TODO: Should this stay here?
 
 /// Marker for global entity.
 #[derive(Component)]

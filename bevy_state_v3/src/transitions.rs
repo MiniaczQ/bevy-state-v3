@@ -1,5 +1,7 @@
 //! Built-in state transitions.
 
+use std::marker::PhantomData;
+
 use bevy_derive::Deref;
 use bevy_ecs::{
     entity::Entity,
@@ -23,14 +25,11 @@ impl<S: State> StateChange<S> {
     pub fn new(previous: Option<S::Repr>, current: S::Repr) -> Self {
         Self { previous, current }
     }
-
-    /// Creates a new instance using a reference to state data.
-    pub fn from_data(data: &StateData<S>) -> Self {
-        let previous = data.previous().cloned();
-        let current = data.current().clone();
-        Self::new(previous, current)
-    }
 }
+
+/// Event triggered during initial state transition.
+#[derive(Event)]
+pub struct OnInit<S: State>(PhantomData<S>);
 
 /// Event triggered when a state is exited.
 /// Reentrant transitions are ignored.
@@ -46,7 +45,10 @@ pub fn on_exit_transition<S: State>(
         if !state.is_updated || state.is_reentrant() {
             continue;
         }
-        let event = OnExit::<S>(StateChange::from_data(state));
+        let event = OnExit::<S>(StateChange::new(
+            state.previous().cloned(),
+            state.current().clone(),
+        ));
         if is_global {
             commands.trigger(event);
         } else {
@@ -69,7 +71,10 @@ pub fn on_enter_transition<S: State>(
         if !state.is_updated || state.is_reentrant() {
             continue;
         }
-        let event = OnEnter::<S>(StateChange::from_data(state));
+        let event = OnEnter::<S>(StateChange::new(
+            state.previous().cloned(),
+            state.current().clone(),
+        ));
         if is_global {
             commands.trigger(event);
         } else {
@@ -92,7 +97,10 @@ pub fn on_reexit_transition<S: State>(
         if !state.is_updated {
             continue;
         }
-        let event = OnReexit::<S>(StateChange::from_data(state));
+        let event = OnReexit::<S>(StateChange::new(
+            state.reentrant_previous().cloned(),
+            state.current().clone(),
+        ));
         if is_global {
             commands.trigger(event);
         } else {
@@ -115,7 +123,10 @@ pub fn on_reenter_transition<S: State>(
         if !state.is_updated {
             continue;
         }
-        let event = OnReenter::<S>(StateChange::from_data(state));
+        let event = OnReenter::<S>(StateChange::new(
+            state.reentrant_previous().cloned(),
+            state.current().clone(),
+        ));
         if is_global {
             commands.trigger(event);
         } else {

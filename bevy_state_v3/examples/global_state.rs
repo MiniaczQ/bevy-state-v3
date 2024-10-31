@@ -1,6 +1,10 @@
 //! This example shows how to use the most basic global state machine.
 //! The machine consists of a single state type that decides whether
 //! a logo moves around the screen and changes color on each bounce.
+//!
+//! Global states are very similar to local states, they too are stored on an entity.
+//! This special entity is marked with [`GlobalMarker`](bevy_state_v3::util::GlobalMarker),
+//! but all state logic is shared between local and global states.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;

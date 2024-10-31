@@ -180,19 +180,15 @@ fn setup(mut commands: Commands) {
 
     // Spawn text for displaying state.
     commands
-        .spawn(
-            NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    overflow: Overflow::scroll_y(),
-                    width: Val::Vw(100.0),
-                    height: Val::Vh(100.0),
-                    flex_direction: FlexDirection::Column,
-                    ..default()
-                },
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                width: Val::Vw(100.0),
+                height: Val::Vh(100.0),
                 ..default()
             },
-        )
+            ..default()
+        })
         .with_child((
             Text::new(""),
             TextLayout::new_with_justify(JustifyText::Center),
@@ -230,12 +226,11 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
 fn update_text(
     _: Trigger<OnReenter<MyState>>,
     state: Single<&StateData<MyState>>,
-    label: Single<Entity, With<StateLabel>>,
-    mut text: TextUiWriter,
+    mut text: Single<&mut Text, With<StateLabel>>,
 ) {
     let mut content = String::new();
     for state in state.update().stack.iter().chain(state.current().iter()) {
         content.push_str(&format!("{:?}\n", state));
     }
-    *text.text(*label, 0) = content;
+    text.0 = content;
 }

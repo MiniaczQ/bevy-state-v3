@@ -1,6 +1,6 @@
 # About
 
-This repository is a work in progress of state v3 proposal for [Bevy Engine](https://github.com/bevyengine/bevy).
+This repository is a work in progress of state V3 proposal for [Bevy Engine](https://github.com/bevyengine/bevy).
 
 Features:
 - [x] Unified naming.  
@@ -16,7 +16,7 @@ Features:
       While built-ins replace the current crate's features,  
       new backends can be created for custom mechanics like:  
       retained substate, state stack, ring-shifting state, etc.
-- [x] Cleaner edge cases.  
+- [ ] Cleaner edge cases.  
       Mainly, separation between state updates and transitions,  
       which makes initial transitions trivial.
 - [x] State hierarchy (DAG).  
@@ -41,7 +41,7 @@ Features:
 - [ ] Feature gated `serde` support.  
       Current crate does not provide it.
 - [ ] Reflection.  
-      Similar to current crate, but on components instead.
+      Similar to current crate.
 
 Out of scope:
 - Removing state machinery.  
@@ -51,6 +51,17 @@ Out of scope:
   Needs design.
 - Single state machine split between many entities.  
   Needs use cases and design.
+
+# Justification
+
+Some reasons why this is the direction we should take, in reference to the current crate:
+
+- Debt, removing it gradually will cause a lot of breaking changes,
+- Bad ergonomics with non-optional states,
+- Cleanup of edge cases, like initial transitions,
+- Resource migration to entities,
+- Transition migration to observers,
+- Inflexible next state, which prevents mechanics like retained substate or stack-based state.
 
 # Major implementation changes
 
@@ -75,7 +86,6 @@ This means filtering whether the correct state was entered requires a check in t
 
 TODO
 
-
 # Questions
 
 1. Reducing boilerplate in transition observers.
@@ -89,5 +99,3 @@ TODO
 
 3. Filtering global state.
   - Move the component to `bevy_ecs` or keep it here for now?
-
-
