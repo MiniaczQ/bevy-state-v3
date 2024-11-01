@@ -17,7 +17,7 @@ fn main() {
         // Register machinery for the state type.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of default behavior like state transition and scoped entities.
-        .register_state(StateConfig::<LogoState>::empty())
+        .register_state::<LogoState>(StateConfig::empty())
         // The best way to interact with global state is through commands.
         // We can initialize a new global state by not specifying a `local` target.
         .init_state(None, LogoState::Enabled)

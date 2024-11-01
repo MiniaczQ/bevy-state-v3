@@ -17,16 +17,16 @@ fn main() {
         // We use a custom set of transitions for re-exit & enter, instead of
         // `StateConfig::default()` which contains exit & enter transitions.
         // You can register any amount of exit/enter transitions as well as implement custom ones.
-        .register_state(
-            StateConfig::<MyState>::empty()
+        .register_state::<MyState>(
+            StateConfig::empty()
                 .with_on_init(true)
                 .with_on_reexit(true)
                 .with_on_enter(true),
         )
         // Register all observers which react to our state transitions.
         .add_observer(setup)
-        .add_observer(meeny_entered)
-        .add_observer(any_reexited)
+        .add_observer(on_enter)
+        .add_observer(on_reexit)
         .add_systems(Update, user_input)
         // Initialize state last, after all systems and observers are registered.
         .init_state(None, MyState::Eeny)
@@ -93,33 +93,21 @@ fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
 }
 
 /// Observer that gets triggered on every non-reentrant [`MyState`] transition in the enter order.
-fn meeny_entered(
+fn on_enter(
     trigger: Trigger<OnEnter<MyState>>,
     mut label: Single<(&mut Text, &mut TransitionLog)>,
 ) {
-    // We can skip checking for un-/targeted events if we don't use our state as both local and global.
-    // Ignore transitions into states that aren't Meeny.
-    if trigger.0 != MyState::Meeny {
-        return;
-    }
-
     let (text, log) = &mut *label;
-    log.0.insert(0, format!("Entered {:?}", trigger.0));
-    log.0.truncate(10);
-    text.0 = log.0.join("\n");
+    let transition = format!("Entered {:?}", trigger.0);
+    update_log(log, text, transition);
 }
 
 /// Observer that gets triggered on every [`MyState`] transition in the exit order.
-fn any_reexited(
+fn on_reexit(
     trigger: Trigger<OnReexit<MyState>>,
     state: Single<&StateData<MyState>>,
     mut label: Single<(&mut Text, &mut TransitionLog)>,
 ) {
-    // Ignore targeted observers which are for local states.
-    if trigger.entity() != Entity::PLACEHOLDER {
-        return;
-    }
-
     let (text, log) = &mut *label;
     // We can check whether we re-entered the same state or not.
     let transition = if state.is_reentrant() {
@@ -127,6 +115,10 @@ fn any_reexited(
     } else {
         format!("Exited {:?}", trigger.0)
     };
+    update_log(log, text, transition);
+}
+
+fn update_log(log: &mut TransitionLog, text: &mut Text, transition: String) {
     log.0.insert(0, transition);
     log.0.truncate(10);
     text.0 = log.0.join("\n");

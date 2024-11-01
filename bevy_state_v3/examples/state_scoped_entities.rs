@@ -10,7 +10,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
-        .register_state(StateConfig::<MyState>::empty().with_despawn_state_scoped(true))
+        .register_state::<MyState>(StateConfig::empty().with_despawn_state_scoped(true))
         .init_state(None, MyState::Enabled)
         .add_systems(Startup, setup)
         .add_systems(

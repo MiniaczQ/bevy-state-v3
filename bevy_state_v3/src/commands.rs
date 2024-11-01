@@ -150,7 +150,7 @@ where
 /// - deferred effect: [`Commands`].
 #[doc(hidden)]
 pub trait CoreStatesExt {
-    fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self;
+    fn register_state<S: State>(&mut self, config: StateConfig) -> &mut Self;
 
     fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self;
 
@@ -158,7 +158,7 @@ pub trait CoreStatesExt {
 }
 
 impl CoreStatesExt for Commands<'_, '_> {
-    fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
+    fn register_state<S: State>(&mut self, config: StateConfig) -> &mut Self {
         self.queue(|world: &mut World| {
             S::register_state(world, config);
         });
@@ -177,7 +177,7 @@ impl CoreStatesExt for Commands<'_, '_> {
 }
 
 impl CoreStatesExt for World {
-    fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
+    fn register_state<S: State>(&mut self, config: StateConfig) -> &mut Self {
         S::register_state(self, config);
         self
     }
@@ -195,7 +195,7 @@ impl CoreStatesExt for World {
 
 #[cfg(feature = "bevy_app")]
 impl CoreStatesExt for bevy_app::SubApp {
-    fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
+    fn register_state<S: State>(&mut self, config: StateConfig) -> &mut Self {
         self.world_mut().register_state::<S>(config);
         self
     }
@@ -213,7 +213,7 @@ impl CoreStatesExt for bevy_app::SubApp {
 
 #[cfg(feature = "bevy_app")]
 impl CoreStatesExt for bevy_app::App {
-    fn register_state<S: State>(&mut self, config: StateConfig<S>) -> &mut Self {
+    fn register_state<S: State>(&mut self, config: StateConfig) -> &mut Self {
         self.main_mut().register_state::<S>(config);
         self
     }

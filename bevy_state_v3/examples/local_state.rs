@@ -17,7 +17,7 @@ fn main() {
         // Register machinery for the state.
         // This is required for both global and local state, but only needs to be called once.
         // By providing an empty config we opt-out of state transition events.
-        .register_state(StateConfig::<LogoState>::empty())
+        .register_state::<LogoState>(StateConfig::empty())
         .add_systems(Startup, setup)
         .add_systems(Update, user_input)
         // Because we are using local state, we cannot use global state to control whether the systems should run.

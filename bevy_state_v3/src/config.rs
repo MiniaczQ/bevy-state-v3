@@ -1,7 +1,5 @@
 //! State configuration during registration.
 
-use std::marker::PhantomData;
-
 use bevy_ecs::{
     schedule::{IntoSystemConfigs, Schedules},
     world::World,
@@ -20,8 +18,7 @@ use crate::{
 /// State registration configuration.
 /// Allows for configuration of enter/exit state systems like transitions and state scoped entities.
 /// Configuration is only applied when registering state for the first time.
-pub struct StateConfig<S: State> {
-    _state: PhantomData<S>,
+pub struct StateConfig {
     despawn_state_scoped: bool,
     on_enter: bool,
     on_exit: bool,
@@ -31,10 +28,9 @@ pub struct StateConfig<S: State> {
     on_deinit: bool,
 }
 
-impl<S: State> Default for StateConfig<S> {
+impl Default for StateConfig {
     fn default() -> Self {
         Self {
-            _state: Default::default(),
             despawn_state_scoped: true,
             on_enter: true,
             on_exit: true,
@@ -46,9 +42,9 @@ impl<S: State> Default for StateConfig<S> {
     }
 }
 
-impl<S: State> StateConfig<S> {
+impl StateConfig {
     /// Applies the configuration to the world.
-    pub(crate) fn apply(self, world: &mut World) {
+    pub(crate) fn apply<S: State>(self, world: &mut World) {
         let mut schedules = world.resource_mut::<Schedules>();
         let schedule = schedules.entry(StateUpdates);
         if self.despawn_state_scoped {
@@ -79,7 +75,6 @@ impl<S: State> StateConfig<S> {
     /// For standard [`OnExit`] and [`OnEnter`] use the [`StateTransitionsConfig::default`].
     pub fn empty() -> Self {
         Self {
-            _state: PhantomData,
             despawn_state_scoped: false,
             on_enter: false,
             on_exit: false,

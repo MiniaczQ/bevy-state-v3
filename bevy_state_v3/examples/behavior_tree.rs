@@ -18,9 +18,9 @@ fn main() {
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
         // Opt-out of default state transitions and state scoped entities.
-        .register_state(StateConfig::<Behavior>::empty())
-        .register_state(StateConfig::<Chase>::empty())
-        .register_state(StateConfig::<Rest>::empty())
+        .register_state::<Behavior>(StateConfig::empty())
+        .register_state::<Chase>(StateConfig::empty())
+        .register_state::<Rest>(StateConfig::empty())
         .add_systems(Startup, setup)
         .add_systems(
             Update,

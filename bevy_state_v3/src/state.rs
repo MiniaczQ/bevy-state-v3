@@ -123,7 +123,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
     ) -> Self::Repr;
 
     /// Registers machinery for this state type to work correctly.
-    fn register_state(world: &mut World, config: StateConfig<Self>) {
+    fn register_state(world: &mut World, config: StateConfig) {
         // TODO: check states plugin
 
         match world
@@ -155,7 +155,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         schedule
             .add_systems(Self::update_state_data_system.in_set(StateSystemSet::update::<Self>()));
 
-        config.apply(world);
+        config.apply::<Self>(world);
     }
 
     /// System that updates the value of this state.
