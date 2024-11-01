@@ -19,18 +19,17 @@ fn main() {
         // You can register any amount of exit/enter transitions as well as implement custom ones.
         .register_state(
             StateConfig::<MyState>::empty()
-                // Exit transitions always run first in sub state to root state order.
-                .with_on_exit(on_reexit_transition::<MyState>)
-                .with_on_enter(on_state_init::<MyState>.before(on_enter_transition::<MyState>))
-                // Enter transitions run after exit transitions in root state to sub state order.
-                .with_on_enter(on_enter_transition::<MyState>),
+                .with_on_init(true)
+                .with_on_reexit(true)
+                .with_on_enter(true),
         )
-        .init_state(None, MyState::Eeny)
         // Register all observers which react to our state transitions.
         .add_observer(setup)
         .add_observer(meeny_entered)
         .add_observer(any_reexited)
         .add_systems(Update, user_input)
+        // Initialize state last, after all systems and observers are registered.
+        .init_state(None, MyState::Eeny)
         .run();
 }
 
@@ -65,7 +64,7 @@ struct TransitionLog(Vec<String>);
 /// The setup here is an observer instead of a system.
 /// This is to ensure that everything is spawned for initial
 /// system transitions, which run before [`Startup`] schedule.
-fn setup(_: Trigger<OnStateInit<MyState>>, mut commands: Commands) {
+fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
     println!();
     println!("");
     println!();

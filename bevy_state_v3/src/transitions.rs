@@ -4,32 +4,52 @@ use bevy_derive::Deref;
 use bevy_ecs::{
     entity::Entity,
     event::Event,
+    observer::Trigger,
     query::Has,
-    system::{Commands, Populated},
+    system::{Commands, Populated, Query},
+    world::{OnAdd, OnRemove},
 };
 
 use crate::{components::StateData, state::State, util::GlobalMarker};
 
-/// Event triggered during initial state transition.
+/// Event triggered when state is added.
 #[derive(Event)]
-pub struct OnStateInit<S: State>(pub S::Repr);
+pub struct OnInit<S: State>(pub S::Repr);
 
-/// System for triggering exit transition events.
-pub fn on_state_init<S: State>(
+/// Observer that emits state [`OnInit`] event.
+pub fn on_init_transition<S: State>(
+    trigger: Trigger<OnAdd, StateData<S>>,
     mut commands: Commands,
-    query: Populated<(Entity, &StateData<S>, Has<GlobalMarker>)>,
+    query: Query<(&StateData<S>, Has<GlobalMarker>)>,
 ) {
-    for (entity, state, is_global) in query.iter() {
-        if state.is_initialized {
-            continue;
-        }
-        let event = OnStateInit::<S>(state.current().clone());
-        if is_global {
-            commands.trigger(event);
-        } else {
-            commands.trigger_targets(event, entity);
-        };
-    }
+    let entity = trigger.entity();
+    let (state, is_global) = query.get(entity).unwrap();
+    let event = OnInit::<S>(state.current().clone());
+    if is_global {
+        commands.trigger(event);
+    } else {
+        commands.trigger_targets(event, entity);
+    };
+}
+
+/// Event triggered when state is removed.
+#[derive(Event)]
+pub struct OnDeinit<S: State>(pub S::Repr);
+
+/// Observer that emits state [`OnDeinit`] event.
+pub fn on_deinit_transition<S: State>(
+    trigger: Trigger<OnRemove, StateData<S>>,
+    mut commands: Commands,
+    query: Query<(&StateData<S>, Has<GlobalMarker>)>,
+) {
+    let entity = trigger.entity();
+    let (state, is_global) = query.get(entity).unwrap();
+    let event = OnDeinit::<S>(state.current().clone());
+    if is_global {
+        commands.trigger(event);
+    } else {
+        commands.trigger_targets(event, entity);
+    };
 }
 
 /// Event triggered when a state is exited.
