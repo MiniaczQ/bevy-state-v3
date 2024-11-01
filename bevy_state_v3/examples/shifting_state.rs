@@ -218,5 +218,5 @@ fn observer_on_reenter(
     trigger: Trigger<OnReenter<MyState>>,
     mut text: Single<&mut Text, With<StateLabel>>,
 ) {
-    text.0 = format!("{:?}", trigger.current);
+    text.0 = format!("{:?}", trigger.0);
 }

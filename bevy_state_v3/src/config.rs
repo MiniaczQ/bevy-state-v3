@@ -12,6 +12,7 @@ use crate::{
     state::State,
     state_scoped::despawn_state_scoped,
     system_set::{StateTransitions, TransitionSystemSet},
+    transitions::on_state_init,
 };
 
 /// State registration configuration.
@@ -42,6 +43,9 @@ impl<S: State> StateConfig<S> {
         if self.defaults {
             transition.add_systems((
                 on_exit_transition::<S>.in_set(TransitionSystemSet::exit::<S>()),
+                on_state_init::<S>
+                    .in_set(TransitionSystemSet::enter::<S>())
+                    .before(on_enter_transition::<S>),
                 on_enter_transition::<S>.in_set(TransitionSystemSet::enter::<S>()),
                 despawn_state_scoped::<S>.in_set(TransitionSystemSet::exit::<S>()),
             ));

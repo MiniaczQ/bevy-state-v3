@@ -21,6 +21,7 @@ fn main() {
             StateConfig::<MyState>::empty()
                 // Exit transitions always run first in sub state to root state order.
                 .with_on_exit(on_reexit_transition::<MyState>)
+                .with_on_enter(on_state_init::<MyState>.before(on_enter_transition::<MyState>))
                 // Enter transitions run after exit transitions in root state to sub state order.
                 .with_on_enter(on_enter_transition::<MyState>),
         )
@@ -64,12 +65,7 @@ struct TransitionLog(Vec<String>);
 /// The setup here is an observer instead of a system.
 /// This is to ensure that everything is spawned for initial
 /// system transitions, which run before [`Startup`] schedule.
-fn setup(trigger: Trigger<OnEnter<MyState>>, mut commands: Commands) {
-    // Return if this isn't an initial transition.
-    if trigger.previous.is_some() {
-        return;
-    }
-
+fn setup(_: Trigger<OnStateInit<MyState>>, mut commands: Commands) {
     println!();
     println!("");
     println!();
@@ -104,12 +100,12 @@ fn meeny_entered(
 ) {
     // We can skip checking for un-/targeted events if we don't use our state as both local and global.
     // Ignore transitions into states that aren't Meeny.
-    if trigger.current != MyState::Meeny {
+    if trigger.0 != MyState::Meeny {
         return;
     }
 
     let (text, log) = &mut *label;
-    log.0.insert(0, format!("Entered {:?}", trigger.current));
+    log.0.insert(0, format!("Entered {:?}", trigger.0));
     log.0.truncate(10);
     text.0 = log.0.join("\n");
 }
@@ -117,6 +113,7 @@ fn meeny_entered(
 /// Observer that gets triggered on every [`MyState`] transition in the exit order.
 fn any_reexited(
     trigger: Trigger<OnReexit<MyState>>,
+    state: Single<&StateData<MyState>>,
     mut label: Single<(&mut Text, &mut TransitionLog)>,
 ) {
     // Ignore targeted observers which are for local states.
@@ -126,10 +123,10 @@ fn any_reexited(
 
     let (text, log) = &mut *label;
     // We can check whether we re-entered the same state or not.
-    let transition = if trigger.previous.as_ref() == Some(&trigger.current) {
-        format!("Re-exited {:?}", trigger.current)
+    let transition = if state.is_reentrant() {
+        format!("Re-exited {:?}", trigger.0)
     } else {
-        format!("Exited {:?}", trigger.current)
+        format!("Exited {:?}", trigger.0)
     };
     log.0.insert(0, transition);
     log.0.truncate(10);

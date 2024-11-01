@@ -26,7 +26,7 @@ pub mod prelude {
     pub use crate::state_set::{StateSet, StateSetData};
     pub use crate::transitions::{
         on_enter_transition, on_exit_transition, on_reenter_transition, on_reexit_transition,
-        OnEnter, OnExit, OnReenter, OnReexit,
+        on_state_init, OnEnter, OnExit, OnReenter, OnReexit, OnStateInit,
     };
     pub use crate::util::{in_state, state_changed, state_changed_to, Global};
 

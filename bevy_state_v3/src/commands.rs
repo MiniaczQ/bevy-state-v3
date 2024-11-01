@@ -137,10 +137,13 @@ where
     }
 }
 
-/// Methods for interacting with states:
+/// Core methods for interacting with states:
 /// - registering state machinery in the world,
 /// - initializing states,
 /// - updating them.
+///
+/// Those methods require providing all relevant data.
+/// Additional methods can be derived from them by using default values.
 ///
 /// Depending on which medium this is called on, those methods will have:
 /// - immediate effect: [`World`], [`SubApp`](bevy_app::SubApp) and [`App`](bevy_app::App),
