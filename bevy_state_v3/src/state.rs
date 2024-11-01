@@ -14,7 +14,7 @@ use crate::{
     components::{RegisteredState, StateData},
     config::StateConfig,
     state_set::{StateSet, StateSetData},
-    system_set::{StateTransitions, StateUpdates, TransitionSystemSet, UpdateSystemSet},
+    system_set::{StateSystemSet, StateUpdates},
 };
 
 /// Trait for states in a hierarchy.
@@ -150,12 +150,10 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
         // Register systems for this state.
         let mut schedules = world.resource_mut::<Schedules>();
-        let update = schedules.entry(StateUpdates);
-        update.configure_sets(UpdateSystemSet::configuration::<Self>());
-        update
-            .add_systems(Self::update_state_data_system.in_set(UpdateSystemSet::update::<Self>()));
-        let transition = schedules.entry(StateTransitions);
-        transition.configure_sets(TransitionSystemSet::configuration::<Self>());
+        let schedule = schedules.entry(StateUpdates);
+        schedule.configure_sets(StateSystemSet::configuration::<Self>());
+        schedule
+            .add_systems(Self::update_state_data_system.in_set(StateSystemSet::update::<Self>()));
 
         config.apply(world);
     }

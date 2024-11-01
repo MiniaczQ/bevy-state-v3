@@ -2,7 +2,7 @@
 
 use bevy_app::{MainScheduleOrder, Plugin, PreStartup, PreUpdate};
 
-use crate::system_set::{StateTransitions, StateUpdates};
+use crate::system_set::StateUpdates;
 
 /// Plugin state registers:
 /// - [`StateUpdates`] schedule, which uses state's update data and dependencies to set the new value of a state,
@@ -16,8 +16,7 @@ pub struct StatePlugin;
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut bevy_app::App) {
         let mut schedule = app.world_mut().resource_mut::<MainScheduleOrder>();
-        schedule.insert_startup_before(PreStartup, StateTransitions);
+        schedule.insert_startup_before(PreStartup, StateUpdates);
         schedule.insert_after(PreUpdate, StateUpdates);
-        schedule.insert_after(StateUpdates, StateTransitions);
     }
 }

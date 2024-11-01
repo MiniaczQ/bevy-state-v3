@@ -52,7 +52,7 @@ mod tests {
         config::StateConfig,
         prelude::StateScoped,
         state_set::StateSetData,
-        system_set::{StateTransitions, StateUpdates},
+        system_set::StateUpdates,
         transitions::{OnEnter, OnExit},
     };
     use crate::{commands::CoreStatesExt, components::StateData, state::State};
@@ -222,7 +222,6 @@ mod tests {
         world.update_state(None, ManualState::B);
         world.update_state(None, ManualState2::D);
         world.run_schedule(StateUpdates);
-        world.run_schedule(StateTransitions);
 
         let transitions = &world.resource::<StateTransitionTracker>().0;
         // Test in groups, because order of directly unrelated states is non-deterministic.
@@ -245,7 +244,6 @@ mod tests {
         world.init_state(None, ManualState::A);
         world.update_state(None, ManualState::B);
         world.run_schedule(StateUpdates);
-        world.run_schedule(StateTransitions);
 
         assert!(world.get_entity(entity).is_err());
     }

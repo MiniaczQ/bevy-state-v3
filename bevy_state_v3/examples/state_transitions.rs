@@ -66,7 +66,7 @@ struct TransitionLog(Vec<String>);
 /// system transitions, which run before [`Startup`] schedule.
 fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
     println!();
-    println!("");
+    println!("Press 1-4 to change state.");
     println!();
 
     // Spawn camera.

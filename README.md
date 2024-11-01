@@ -16,7 +16,7 @@ Features:
       While built-ins replace the current crate's features,  
       new backends can be created for custom mechanics like:  
       retained substate, state stack, ring-shifting state, etc.
-- [ ] Cleaner edge cases.  
+- [x] Cleaner edge cases.  
       Mainly, separation between state updates and transitions,  
       which makes initial transitions trivial.
 - [x] State hierarchy (DAG).  

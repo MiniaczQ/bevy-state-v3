@@ -10,24 +10,15 @@ use crate::state::State;
 #[derive(ScheduleLabel, Debug, PartialEq, Eq, Hash, Clone)]
 pub struct StateUpdates;
 
-/// Schedule where state transitions are triggered.
-#[derive(ScheduleLabel, Debug, PartialEq, Eq, Hash, Clone)]
-pub struct StateTransitions;
-
-/// Updates from root states to leaf states.
+/// Updates run from root states to leaf states.
+/// Exits run from leaf states to root states.
+/// Enters run from root states to leaf states.
 #[derive(SystemSet, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum UpdateSystemSet {
+pub enum StateSystemSet {
     /// All [`Update`]s.
     AllUpdates,
     /// Lower values before higher ones.
     Update(u32),
-}
-
-/// Exits run from leaf states to root states.
-/// Enters run from root states to leaf states.
-/// Triggered events are targeted for local state and untargeted for global state.
-#[derive(SystemSet, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum TransitionSystemSet {
     /// All [`Exit`]s.
     AllExits,
     /// Higher values then lower ones.
@@ -38,23 +29,12 @@ pub enum TransitionSystemSet {
     Enter(u32),
 }
 
-impl UpdateSystemSet {
+impl StateSystemSet {
     /// Returns system set used to update this state.
     pub fn update<S: State>() -> Self {
         Self::Update(S::ORDER)
     }
-    /// Returns system set configuration for this set.
-    pub fn configuration<S: State>() -> impl IntoSystemSetConfigs {
-        (
-            Self::AllUpdates,
-            Self::update::<S>()
-                .after(Self::Update(S::ORDER - 1))
-                .in_set(Self::AllUpdates),
-        )
-    }
-}
 
-impl TransitionSystemSet {
     /// Returns system set used to run exit transitions for this state.
     pub fn exit<S: State>() -> Self {
         Self::Exit(S::ORDER)
@@ -68,7 +48,10 @@ impl TransitionSystemSet {
     /// Returns system set configuration for this set.
     pub fn configuration<S: State>() -> impl IntoSystemSetConfigs {
         (
-            (Self::AllExits, Self::AllEnters).chain(),
+            (Self::AllUpdates, Self::AllExits, Self::AllEnters).chain(),
+            Self::update::<S>()
+                .after(Self::Update(S::ORDER - 1))
+                .in_set(Self::AllUpdates),
             Self::exit::<S>()
                 .before(Self::Exit(S::ORDER - 1))
                 .in_set(Self::AllExits),
