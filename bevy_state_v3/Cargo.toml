@@ -15,6 +15,7 @@ default = ["bevy_reflect", "bevy_app", "bevy_hierarchy"]
 bevy_reflect = ["dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
 bevy_app = ["dep:bevy_app"]
 bevy_hierarchy = ["dep:bevy_hierarchy"]
+serialize = ["serde"]
 
 [dependencies]
 bevy_ecs = { git = "https://github.com/bevyengine/bevy" }
@@ -24,6 +25,7 @@ bevy_utils = { git = "https://github.com/bevyengine/bevy" }
 bevy_reflect = { git = "https://github.com/bevyengine/bevy", optional = true }
 bevy_app = { git = "https://github.com/bevyengine/bevy", optional = true }
 bevy_hierarchy = { git = "https://github.com/bevyengine/bevy", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
 disqualified = "1.0"
 
 [lints]
@@ -63,8 +65,6 @@ bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, f
     "webgl2",
     "sysinfo_plugin",
 ] }
-rand = "0.8"
-rand_mt = "4"
 
 [[example]]
 name = "global_state"

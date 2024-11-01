@@ -3,45 +3,45 @@
 This repository is a work in progress of state V3 proposal for [Bevy Engine](https://github.com/bevyengine/bevy).
 
 Features:
-- [x] Unified naming.  
-      Currently names fluctuate between singular (state) and plural (states).
-- [x] Single, unified `State` trait.  
-      The current crate uses 3 different traits: `States`, `FreelyMutableState`, `SubState`.
-- [x] Unified state data struct.  
-      No longer separating current state from buffered next state.  
-      This allows for buffering more useful information too.
-- [x] Strongly typed optional and non-optional states.  
-      Currently, states are always optional.
-- [x] Flexible state update backends.  
-      While built-ins replace the current crate's features,  
-      new backends can be created for custom mechanics like:  
-      retained substate, state stack, ring-shifting state, etc.
-- [x] Cleaner edge cases.  
-      Mainly, separation between state updates and transitions,  
-      which makes initial transitions trivial.
-- [x] State hierarchy (DAG).  
-      Like current crate, update order from root states to leaf states.
-- [x] State transitions through observers.  
-      As opposed to existing crate which uses schedules.  
-      Update order is still the same; exit from leaf to root, then enter from root to leaf.  
-      This fits well with states as entities, allowing observation of global and local events.  
-      The drawback is the minor additional boilerplate to filter event data.
-- [x] State scoped entities.  
-      Same behavior as current crate, tweaked configuration.
-- [x] Global (one per world) and local (one per entity) state machines.  
-      Current crate supports only global states.
-- [x] Extensible state configuration (transitions, state scoped, etc.),  
-      Current crate is missing some configuration (opt-out transitions),  
-      some is also fragmented away from state registration (state scoped).
-- [x] Command based state updates for basic state types.  
-      Similar to the existing one.
-- [x] Derive macro for simple root and sub states.  
-      Much like current macro, but uses the state optionality.
-- [x] Examples to cover both old and new features.
-- [ ] Feature gated `serde` support.  
-      Current crate does not provide it.
-- [ ] Reflection.  
-      Similar to current crate.
+- Unified naming.  
+  Currently names fluctuate between singular (state) and plural (states).
+- Single, unified `State` trait.  
+  The current crate uses 3 different traits: `States`, `FreelyMutableState`, `SubState`.
+- Unified state data struct.  
+  No longer separating current state from buffered next state.  
+  This allows for buffering more useful information too.
+- Strongly typed optional and non-optional states.  
+  Currently, states are always optional.
+- Flexible state update backends.  
+  While built-ins replace the current crate's features,  
+  new backends can be created for custom mechanics like:  
+  retained substate, state stack, ring-shifting state, etc.
+- Cleaner edge cases.  
+  Mainly, separation between state updates and transitions,  
+  which makes initial transitions trivial.
+- State hierarchy (DAG).  
+  Like current crate, update order from root states to leaf states.
+- State transitions through observers.  
+  As opposed to existing crate which uses schedules.  
+  Update order is still the same; exit from leaf to root, then enter from root to leaf.  
+  This fits well with states as entities, allowing observation of global and local events.  
+  The drawback is the minor additional boilerplate to filter event data.
+- State scoped entities.  
+  Same behavior as current crate, tweaked configuration.
+- Global (one per world) and local (one per entity) state machines.  
+  Current crate supports only global states.
+- Extensible state configuration (transitions, state scoped, etc.),  
+  Current crate is missing some configuration (opt-out transitions),  
+  some is also fragmented away from state registration (state scoped).
+- Command based state updates for basic state types.  
+  Similar to the existing one.
+- Derive macro for simple root and sub states.  
+  Much like current macro, but uses the state optionality.
+- Examples to cover both old and new features.
+- Feature gated serialization support.  
+  Current crate does not provide it.
+- Feature gated reflection.  
+  Much like current crate.
 
 Out of scope:
 - Removing state machinery.  

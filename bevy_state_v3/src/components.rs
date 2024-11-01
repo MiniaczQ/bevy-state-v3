@@ -6,11 +6,19 @@ use bevy_ecs::{
     component::{Component, ComponentId, Components, RequiredComponents, StorageType},
     storage::Storages,
 };
+#[cfg(feature = "bevy_reflect")]
+use bevy_reflect::prelude::*;
 
 use crate::{state::State, state_set::StateSet};
 
 /// Component that stores state data.
 #[derive(Debug)]
+#[cfg_attr(feature = "bevy_reflect", derive(Reflect))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    all(feature = "serialize", feature = "bevy_reflect"),
+    reflect(Serialize, Deserialize)
+)]
 pub struct StateData<S: State> {
     /// Whether this state was reentered.
     pub(crate) is_reentrant: bool,

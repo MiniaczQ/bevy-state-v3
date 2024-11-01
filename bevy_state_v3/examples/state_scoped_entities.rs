@@ -4,7 +4,6 @@
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;
-use rand::Rng;
 
 fn main() {
     App::new()
@@ -18,7 +17,7 @@ fn main() {
             Update,
             (
                 user_input,
-                (spawn_logos, bounce_around, cycle_color).run_if(in_state(MyState::Enabled)),
+                (spawn_logos, bounce_around).run_if(in_state(MyState::Enabled)),
             )
                 .chain(),
         )
@@ -33,12 +32,16 @@ enum MyState {
 }
 
 /// User controls.
-fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
-    if input.just_pressed(KeyCode::Digit1) {
-        commands.update_state(None, MyState::Enabled);
-    }
-    if input.just_pressed(KeyCode::Digit2) {
-        commands.update_state(None, MyState::Disabled);
+fn user_input(
+    mut commands: Commands,
+    input: Res<ButtonInput<KeyCode>>,
+    state: Global<&StateData<MyState>>,
+) {
+    if input.just_pressed(KeyCode::Space) {
+        match state.current() {
+            MyState::Enabled => commands.update_state(None, MyState::Disabled),
+            MyState::Disabled => commands.update_state(None, MyState::Enabled),
+        };
     }
 }
 
@@ -61,6 +64,7 @@ fn spawn_logos(
     assets: Res<AssetServer>,
     time: Res<Time>,
     mut timer: Local<Option<Timer>>,
+    mut index: Local<u32>,
 ) {
     let timer = timer.get_or_insert_with(|| Timer::from_seconds(1.0, TimerMode::Repeating));
     timer.tick(time.delta());
@@ -70,23 +74,21 @@ fn spawn_logos(
     }
 
     // Create logo with random position and velocity.
-    let mut rng = rand::thread_rng();
+    let t = *index as f32;
+    let angle = t * 137.507764;
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
         Sprite {
             image: texture,
-            color: Color::hsv(rng.gen_range(0.0..=1.0), 1.0, 1.0),
+            color: Color::oklch(0.5, 0.5, angle),
             anchor: Anchor::Center,
             ..default()
         },
-        Transform::from_xyz(
-            rng.gen_range(-200.0..=200.),
-            rng.gen_range(-200.0..=200.),
-            0.,
-        ),
-        Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        Velocity(Vec2::from(angle.to_radians().sin_cos()) * 3.0),
         StateScoped::<MyState>(MyState::Enabled),
     ));
+    *index += 1;
 }
 
 /// Make the logo bounce.
@@ -128,12 +130,5 @@ fn bounce_around(
         if flip_y {
             velocity.0.y *= -1.;
         }
-    }
-}
-
-/// Make the logo rainbow.
-fn cycle_color(mut logos: Populated<&mut Sprite, With<Sprite>>) {
-    for mut sprite in logos.iter_mut() {
-        sprite.color = sprite.color.rotate_hue(0.3);
     }
 }

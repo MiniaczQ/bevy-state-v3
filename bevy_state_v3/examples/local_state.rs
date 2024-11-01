@@ -2,9 +2,12 @@
 //! The machines consists of a single state type that decides
 //! whether a logo moves around the screen and changes color.
 
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::{
+    color::palettes::tailwind::{BLUE_600, RED_600},
+    prelude::*,
+    sprite::Anchor,
+};
 use bevy_state_v3::prelude::*;
-use rand::Rng;
 
 fn main() {
     App::new()
@@ -68,22 +71,17 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn(Camera2d);
 
     // Create logo with random position and velocity.
-    let mut rng = rand::thread_rng();
     let texture = assets.load("branding/bevy_logo_dark.png");
     let entity = commands
         .spawn((
             Sprite {
                 image: texture,
-                color: Color::hsv(rng.gen_range(0.0..=1.0), 1.0, 1.0),
+                color: RED_600.into(),
                 anchor: Anchor::Center,
                 ..default()
             },
-            Transform::from_xyz(
-                rng.gen_range(-200.0..=200.),
-                rng.gen_range(-200.0..=200.),
-                0.,
-            ),
-            Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
+            Transform::from_xyz(100.0, 0.0, 0.),
+            Velocity(Vec2::splat(3.0)),
             ToggleOn(KeyCode::Digit1),
         ))
         .id();
@@ -91,21 +89,16 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.init_state(Some(entity), LogoState::Enabled);
 
     // Create another logo with random position and velocity.
-    let mut rng = rand::thread_rng();
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
         Sprite {
             image: texture,
-            color: Color::hsv(rng.gen_range(0.0..=1.0), 1.0, 1.0),
+            color: BLUE_600.into(),
             anchor: Anchor::Center,
             ..default()
         },
-        Transform::from_xyz(
-            rng.gen_range(-200.0..=200.),
-            rng.gen_range(-200.0..=200.),
-            0.,
-        ),
-        Velocity(Dir2::from_rng(&mut rng) * rng.gen_range(0.0..=10.)),
+        Transform::from_xyz(-100.0, 0.0, 0.0),
+        Velocity(Vec2::splat(-2.0)),
         ToggleOn(KeyCode::Digit2),
         // This time we add the state directly, by hand.
         LogoState::Enabled.into_data(),
