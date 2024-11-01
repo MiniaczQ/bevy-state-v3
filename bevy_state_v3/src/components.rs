@@ -28,9 +28,6 @@ pub struct StateData<S: State> {
     /// Whether this state was updated in the last [`StateTransition`] schedule.
     /// For a standard use case, this happens once per frame.
     pub(crate) is_updated: bool,
-
-    /// Whether this state had it's initial transition called.
-    pub(crate) is_initialized: bool,
 }
 
 impl<S> Default for StateData<S>
@@ -45,7 +42,6 @@ where
             current: Default::default(),
             update: Default::default(),
             is_updated: false,
-            is_initialized: false,
         }
     }
 }
@@ -89,7 +85,6 @@ impl<S: State> StateData<S> {
             is_reentrant: false,
             update: S::Update::default(),
             is_updated: false,
-            is_initialized: false,
         }
     }
 

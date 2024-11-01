@@ -169,17 +169,13 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
             let dependency_updated = Self::Dependencies::is_updated(&dependencies);
             let state_should_update = state.update.should_update();
             let should_update = dependency_updated || state_should_update;
+            if state.is_updated != should_update {
+                state.is_updated = should_update;
+            }
             if should_update {
                 let next = Self::update(&mut state, dependencies);
                 state.inner_update(next);
                 state.update.post_update();
-            }
-            // Reduce mutable access for change tracking
-            if state.is_updated != should_update {
-                state.is_updated = should_update;
-            }
-            if !state.is_initialized {
-                state.is_initialized = true;
             }
         }
     }
