@@ -71,7 +71,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         Sprite {
             image: texture,
-            color: Color::hsv(0.0, 1.0, 1.0),
+            color: Color::oklch(0.5, 0.5, 0.0),
             anchor: Anchor::Center,
             ..default()
         },
@@ -82,6 +82,9 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 /// Where the logo is going.
 #[derive(Component)]
 struct Velocity(Vec2);
+
+/// Half of the logo size for collision checking.
+const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
 
 /// Moves the logo around.
 /// The logo bouncess off the screen edges.
@@ -94,42 +97,25 @@ fn move_logo(
     let (transform, velocity, sprite) = &mut *logo;
 
     transform.translation += velocity.0.extend(0.);
+
     let logo_pos = transform.translation.xy();
 
-    // Detect collisions with screen edges.
-    const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
+    // Check if the logo's extents are outside the screen.
+    let outside_max = camera.area.max.cmplt(logo_pos + LOGO_HALF_SIZE);
+    let outside_min = camera.area.min.cmpgt(logo_pos - LOGO_HALF_SIZE);
 
-    let mut flip_x = false;
-    let x_max = camera.area.max.x - LOGO_HALF_SIZE.x;
-    if x_max < logo_pos.x {
-        transform.translation.x = x_max;
-        flip_x = !flip_x;
-    }
-    let x_min = camera.area.min.x + LOGO_HALF_SIZE.x;
-    if logo_pos.x < x_min {
-        transform.translation.x = x_min;
-        flip_x = !flip_x;
-    }
-    if flip_x {
-        velocity.0.x *= -1.;
-    }
+    // Clamp the logo to screen edges and reverse velocity if it hits an edge.
+    transform.translation = transform
+        .translation
+        .xy()
+        .clamp(
+            camera.area.min + LOGO_HALF_SIZE,
+            camera.area.max - LOGO_HALF_SIZE,
+        )
+        .extend(0.0);
+    velocity.0 = Vec2::select(outside_max ^ outside_min, -velocity.0, velocity.0);
 
-    let mut flip_y = false;
-    let y_max = camera.area.max.y - LOGO_HALF_SIZE.y;
-    if y_max < logo_pos.y {
-        transform.translation.y = y_max;
-        flip_y = !flip_y;
-    }
-    let y_min = camera.area.min.y + LOGO_HALF_SIZE.y;
-    if logo_pos.y < y_min {
-        transform.translation.y = y_min;
-        flip_y = !flip_y;
-    }
-    if flip_y {
-        velocity.0.y *= -1.;
-    }
-
-    if flip_x | flip_y {
+    if outside_min.any() || outside_max.any() {
         // Rotate hue by golden angle for nice color variation.
         sprite.color = sprite.color.rotate_hue(137.507764);
     }

@@ -1,6 +1,6 @@
-//! This example shows how to use the most basic global state machine.
-//! The machine consists of a single state type that decides
-//! whether a logo moves around the screen and changes color.
+//! This example shows how to use state scoped entities.
+//! State scoped entities are created by marking any entity with the [`StateScoped`] component.
+//! For this to work correctly, the state we use must be appropriately configured.
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_state_v3::prelude::*;
@@ -10,14 +10,16 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
+        // Enable (despawning of) state scoped entities.
         .register_state::<MyState>(StateConfig::empty().with_despawn_state_scoped(true))
-        .init_state(None, MyState::Enabled)
+        .init_state(None, MyState::Spawning)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
             (
                 user_input,
-                (spawn_logos, bounce_around).run_if(in_state(MyState::Enabled)),
+                spawn_logos.run_if(in_state(MyState::Spawning)),
+                bounce_around,
             )
                 .chain(),
         )
@@ -27,7 +29,8 @@ fn main() {
 #[derive(State, Default, PartialEq, Debug, Clone)]
 enum MyState {
     #[default]
-    Enabled,
+    Spawning,
+    Existing,
     Disabled,
 }
 
@@ -39,8 +42,9 @@ fn user_input(
 ) {
     if input.just_pressed(KeyCode::Space) {
         match state.current() {
-            MyState::Enabled => commands.update_state(None, MyState::Disabled),
-            MyState::Disabled => commands.update_state(None, MyState::Enabled),
+            MyState::Spawning => commands.update_state(None, MyState::Existing),
+            MyState::Existing => commands.update_state(None, MyState::Disabled),
+            MyState::Disabled => commands.update_state(None, MyState::Spawning),
         };
     }
 }
@@ -54,6 +58,13 @@ struct Velocity(Vec2);
 
 /// Create the camera and logo.
 fn setup(mut commands: Commands) {
+    println!();
+    println!("Press SPACE to cycle between");
+    println!("- spawning entities,");
+    println!("- keeping entities,");
+    println!("- removing entities.");
+    println!();
+
     // Add camera.
     commands.spawn(Camera2d);
 }
@@ -66,7 +77,7 @@ fn spawn_logos(
     mut timer: Local<Option<Timer>>,
     mut index: Local<u32>,
 ) {
-    let timer = timer.get_or_insert_with(|| Timer::from_seconds(1.0, TimerMode::Repeating));
+    let timer = timer.get_or_insert_with(|| Timer::from_seconds(0.3, TimerMode::Repeating));
     timer.tick(time.delta());
 
     if !timer.finished() {
@@ -86,49 +97,40 @@ fn spawn_logos(
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
         Velocity(Vec2::from(angle.to_radians().sin_cos()) * 3.0),
-        StateScoped::<MyState>(MyState::Enabled),
+        StateScoped::<MyState>(MyState::Existing),
     ));
     *index += 1;
 }
 
 /// Make the logo bounce.
 fn bounce_around(
-    mut logos: Populated<(&mut Transform, &mut Velocity), With<Sprite>>,
+    mut logos: Populated<(&mut Sprite, &mut Transform, &mut Velocity), With<Sprite>>,
     camera: Single<&OrthographicProjection>,
 ) {
     let camera = camera;
-    for (mut transform, mut velocity) in logos.iter_mut() {
+    for (mut sprite, mut transform, mut velocity) in logos.iter_mut() {
         transform.translation += velocity.0.extend(0.);
+
         let logo_pos = transform.translation.xy();
 
-        let mut flip_x = false;
-        let x_max = camera.area.max.x - LOGO_HALF_SIZE.x;
-        if x_max < logo_pos.x {
-            transform.translation.x = x_max;
-            flip_x = !flip_x;
-        }
-        let x_min = camera.area.min.x + LOGO_HALF_SIZE.x;
-        if logo_pos.x < x_min {
-            transform.translation.x = x_min;
-            flip_x = !flip_x;
-        }
-        if flip_x {
-            velocity.0.x *= -1.;
-        }
+        // Check if the logo's extents are outside the screen.
+        let outside_max = camera.area.max.cmplt(logo_pos + LOGO_HALF_SIZE);
+        let outside_min = camera.area.min.cmpgt(logo_pos - LOGO_HALF_SIZE);
 
-        let mut flip_y = false;
-        let y_max = camera.area.max.y - LOGO_HALF_SIZE.y;
-        if y_max < logo_pos.y {
-            transform.translation.y = y_max;
-            flip_y = !flip_y;
-        }
-        let y_min = camera.area.min.y + LOGO_HALF_SIZE.y;
-        if logo_pos.y < y_min {
-            transform.translation.y = y_min;
-            flip_y = !flip_y;
-        }
-        if flip_y {
-            velocity.0.y *= -1.;
+        // Clamp the logo to screen edges and reverse velocity if it hits an edge.
+        transform.translation = transform
+            .translation
+            .xy()
+            .clamp(
+                camera.area.min + LOGO_HALF_SIZE,
+                camera.area.max - LOGO_HALF_SIZE,
+            )
+            .extend(0.0);
+        velocity.0 = Vec2::select(outside_max ^ outside_min, -velocity.0, velocity.0);
+
+        if outside_min.any() || outside_max.any() {
+            // Rotate hue by golden angle for nice color variation.
+            sprite.color = sprite.color.rotate_hue(137.507764);
         }
     }
 }
