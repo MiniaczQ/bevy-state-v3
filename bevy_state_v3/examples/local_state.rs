@@ -50,13 +50,6 @@ fn user_input(
     }
 }
 
-/// Half of the logo size for collision checking.
-const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
-
-/// Where the logo is going.
-#[derive(Component)]
-struct Velocity(Vec2);
-
 /// Which key toggles the logo.
 #[derive(Component)]
 struct ToggleOn(KeyCode);
@@ -100,6 +93,13 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         LogoState::Enabled.into_data(),
     ));
 }
+
+/// Where the logo is going.
+#[derive(Component)]
+struct Velocity(Vec2);
+
+/// Half of the logo size for collision checking.
+const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
 
 /// Make the logo bounce.
 fn bounce_around(
