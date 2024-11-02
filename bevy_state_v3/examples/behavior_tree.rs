@@ -6,7 +6,7 @@
 use std::time::Duration;
 
 use bevy::{
-    color::palettes::tailwind::{BLUE_300, RED_300},
+    color::palettes::tailwind::{BLUE_300, GREEN_300, RED_300, RED_600},
     prelude::*,
     sprite::Anchor,
 };
@@ -18,9 +18,10 @@ fn main() {
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
         // Opt-out of default state transitions and state scoped entities.
-        .register_state::<Behavior>(StateConfig::empty())
+        .register_state::<Behavior>(StateConfig::empty().with_on_enter(true))
         .register_state::<Chase>(StateConfig::empty())
         .register_state::<Rest>(StateConfig::empty())
+        .add_observer(update_color)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -354,4 +355,15 @@ fn look_to(transform: &mut Transform, target: Vec3) {
         y_axis: front,
         z_axis: -Vec3::Z,
     });
+}
+
+/// Change enemy color based on their state.
+fn update_color(trigger: Trigger<OnEnter<Behavior>>, mut query: Populated<&mut Sprite>) {
+    let entity = trigger.entity();
+    let mut sprite = query.get_mut(entity).unwrap();
+    match trigger.0 {
+        Behavior::Lookout => sprite.color = RED_300.into(),
+        Behavior::Chase => sprite.color = RED_600.into(),
+        Behavior::Rest => sprite.color = GREEN_300.into(),
+    }
 }
