@@ -50,10 +50,10 @@ mod tests {
     use crate::{
         self as bevy_state_v3,
         config::StateConfig,
-        prelude::StateScoped,
+        prelude::{OnInit, StateScoped},
         state_set::StateSetData,
         system_set::StateUpdates,
-        transitions::{OnEnter, OnExit},
+        transitions::{OnDeinit, OnEnter, OnExit},
     };
     use crate::{commands::CoreStatesExt, components::StateData, state::State};
 
@@ -246,6 +246,24 @@ mod tests {
         world.run_schedule(StateUpdates);
 
         assert!(world.get_entity(entity).is_err());
+    }
+
+    #[test]
+    fn init_deinit() {
+        let mut world = World::new();
+        world.init_resource::<Schedules>();
+        world.register_state::<ManualState>(StateConfig::default());
+        world.init_resource::<StateTransitionTracker>();
+        world.add_observer(track::<OnInit<ManualState>>());
+        world.add_observer(track::<OnDeinit<ManualState>>());
+        let entity = world.spawn_empty().id();
+
+        world.init_state(Some(entity), ManualState::A);
+        world.despawn(entity);
+
+        let transitions = &world.resource::<StateTransitionTracker>().0;
+        assert_eq!(transitions[0], type_name::<OnInit<ManualState>>());
+        assert_eq!(transitions[1], type_name::<OnDeinit<ManualState>>());
     }
 
     // Debug stuff

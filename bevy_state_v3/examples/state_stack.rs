@@ -178,13 +178,10 @@ fn setup(mut commands: Commands) {
 
     // Spawn text for displaying state.
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                width: Val::Vw(100.0),
-                height: Val::Vh(100.0),
-                ..default()
-            },
+        .spawn(Node {
+            position_type: PositionType::Absolute,
+            width: Val::Vw(100.0),
+            height: Val::Vh(100.0),
             ..default()
         })
         .with_child((

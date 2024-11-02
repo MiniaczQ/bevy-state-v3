@@ -19,7 +19,7 @@ use crate::{
 /// Allows for configuration of enter/exit state systems like transitions and state scoped entities.
 /// Configuration is only applied when registering state for the first time.
 pub struct StateConfig {
-    despawn_state_scoped: bool,
+    state_scoped: bool,
     on_enter: bool,
     on_exit: bool,
     on_reenter: bool,
@@ -31,7 +31,7 @@ pub struct StateConfig {
 impl Default for StateConfig {
     fn default() -> Self {
         Self {
-            despawn_state_scoped: true,
+            state_scoped: true,
             on_enter: true,
             on_exit: true,
             on_reenter: false,
@@ -47,7 +47,7 @@ impl StateConfig {
     pub(crate) fn apply<S: State>(self, world: &mut World) {
         let mut schedules = world.resource_mut::<Schedules>();
         let schedule = schedules.entry(StateUpdates);
-        if self.despawn_state_scoped {
+        if self.state_scoped {
             schedule.add_systems(despawn_state_scoped::<S>.in_set(StateSystemSet::exit::<S>()));
         }
         if self.on_enter {
@@ -75,7 +75,7 @@ impl StateConfig {
     /// For standard [`OnExit`] and [`OnEnter`] use the [`StateTransitionsConfig::default`].
     pub fn empty() -> Self {
         Self {
-            despawn_state_scoped: false,
+            state_scoped: false,
             on_enter: false,
             on_exit: false,
             on_reenter: false,
@@ -86,8 +86,8 @@ impl StateConfig {
     }
 
     /// Sets whether state scoped entity despawning will be enabled.
-    pub fn with_despawn_state_scoped(mut self, enabled: bool) -> Self {
-        self.despawn_state_scoped = enabled;
+    pub fn with_state_scoped(mut self, enabled: bool) -> Self {
+        self.state_scoped = enabled;
         self
     }
 

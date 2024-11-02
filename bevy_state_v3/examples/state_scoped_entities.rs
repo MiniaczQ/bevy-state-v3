@@ -1,5 +1,6 @@
 //! This example shows how to use state scoped entities.
-//! State scoped entities are created by marking any entity with the [`StateScoped`] component.
+//! State scoped entities disappear when their selected state is exited.
+//! They are created by marking any entity with the [`StateScoped`] component.
 //! For this to work correctly, the state we use must be appropriately configured.
 
 use bevy::{prelude::*, sprite::Anchor};
@@ -11,7 +12,7 @@ fn main() {
         // TODO: remove once lands in `DefaultPlugins`
         .add_plugins(StatePlugin)
         // Enable (despawning of) state scoped entities.
-        .register_state::<MyState>(StateConfig::empty().with_despawn_state_scoped(true))
+        .register_state::<MyState>(StateConfig::empty().with_state_scoped(true))
         .init_state(None, MyState::Spawning)
         .add_systems(Startup, setup)
         .add_systems(

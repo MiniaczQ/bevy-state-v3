@@ -74,15 +74,12 @@ fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
 
     // Spawn text for displaying state.
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                overflow: Overflow::scroll_y(),
-                width: Val::Vw(100.0),
-                height: Val::Vh(100.0),
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
+        .spawn(Node {
+            position_type: PositionType::Absolute,
+            overflow: Overflow::scroll_y(),
+            width: Val::Vw(100.0),
+            height: Val::Vh(100.0),
+            flex_direction: FlexDirection::Row,
             ..default()
         })
         .with_child((
