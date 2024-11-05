@@ -6,7 +6,6 @@ use crate::system_set::StateUpdates;
 
 /// Plugin state registers:
 /// - [`StateUpdates`] schedule, which uses state's update data and dependencies to set the new value of a state,
-/// - [`StateTransitions`] schedule, which uses buffered update data to run exit/enter systems and transition events.
 ///
 /// State updates and transitions run in the main schedule "inbetween" frames, meanwhile
 /// in startup only the transition schedule is executed to trigger initial transition events.
