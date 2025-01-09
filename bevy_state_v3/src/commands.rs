@@ -1,12 +1,10 @@
 //! Helper methods for interacting with states.
 
 use bevy_ecs::{
-    entity::Entity,
-    query::{QuerySingleError, With},
-    system::Commands,
-    world::{Command, World},
+    prelude::{Command, Commands, Entity, Result, With, World},
+    query::QuerySingleError,
 };
-use bevy_utils::tracing::warn;
+use bevy_log::warn;
 
 use crate::{
     components::StateData,
@@ -27,7 +25,7 @@ impl<S: State> InitializeStateCommand<S> {
 }
 
 impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
-    fn apply(self, world: &mut World) {
+    fn apply(self, world: &mut World) -> Result {
         let entity = match self.local {
             Some(entity) => entity,
             None => {
@@ -39,7 +37,7 @@ impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
                     Err(QuerySingleError::NoEntities(_)) => world.spawn(GlobalMarker).id(),
                     Err(QuerySingleError::MultipleEntities(_)) => {
                         warn!("Insert global state command failed, multiple entities have the `GlobalStateMarker` component.");
-                        return;
+                        return Ok(());
                     }
                 }
             }
@@ -63,6 +61,7 @@ impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
                 );
             }
         }
+        Ok(())
     }
 }
 
@@ -104,9 +103,9 @@ pub fn state_target_entity(world: &mut World, local: Option<Entity>) -> Option<E
 }
 
 impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
-    fn apply(self, world: &mut World) {
+    fn apply(self, world: &mut World) -> Result {
         let Some(entity) = state_target_entity(world, self.local) else {
-            return;
+            return Ok(());
         };
         let mut entity = world.entity_mut(entity);
         let Some(mut state) = entity.get_mut::<StateData<S>>() else {
@@ -114,9 +113,10 @@ impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
                 "Set state command failed, entity does not have state {}",
                 disqualified::ShortName::of::<S>()
             );
-            return;
+            return Ok(());
         };
         state.update = self.update;
+        Ok(())
     }
 }
 
@@ -183,12 +183,16 @@ impl CoreStatesExt for World {
     }
 
     fn init_state<R: StateRepr>(&mut self, local: Option<Entity>, initial: R) -> &mut Self {
-        InitializeStateCommand::<R::State>::new(local, initial).apply(self);
+        InitializeStateCommand::<R::State>::new(local, initial)
+            .apply(self)
+            .unwrap();
         self
     }
 
     fn update_state<S: IntoStateUpdate>(&mut self, local: Option<Entity>, update: S) -> &mut Self {
-        WakeStateTargetCommand::<S>::new(local, update).apply(self);
+        WakeStateTargetCommand::<S>::new(local, update)
+            .apply(self)
+            .unwrap();
         self
     }
 }

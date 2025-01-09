@@ -106,10 +106,12 @@ fn spawn_logos(
 /// Make the logo bounce.
 fn bounce_around(
     mut logos: Populated<(&mut Sprite, &mut Transform, &mut Velocity), With<Sprite>>,
-    camera: Single<&OrthographicProjection>,
+    camera: Single<&Projection>,
     time: Res<Time>,
 ) {
-    let camera = camera;
+    let Projection::Orthographic(camera) = &*camera else {
+        return;
+    };
     let delta = time.delta_secs();
     for (mut sprite, mut transform, mut velocity) in logos.iter_mut() {
         transform.translation += velocity.0.extend(0.) * delta;

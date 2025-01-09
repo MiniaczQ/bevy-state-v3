@@ -1,6 +1,6 @@
 [package]
 name = "bevy_state_v3"
-version = "0.15.0-dev"
+version = "0.16.0-dev"
 edition = "2021"
 description = "Finite state machines for Bevy"
 homepage = "https://bevyengine.org"
@@ -20,12 +20,13 @@ serialize = ["serde"]
 [dependencies]
 bevy_ecs = { git = "https://github.com/bevyengine/bevy" }
 bevy_derive = { git = "https://github.com/bevyengine/bevy" }
-bevy_state_macros = { path = "macros", version = "0.15.0-dev" }
-bevy_utils = { git = "https://github.com/bevyengine/bevy" }
+bevy_state_macros = { path = "macros", version = "0.16.0-dev" }
+bevy_log = { git = "https://github.com/bevyengine/bevy" }
 bevy_reflect = { git = "https://github.com/bevyengine/bevy", optional = true }
 bevy_app = { git = "https://github.com/bevyengine/bevy", optional = true }
 bevy_hierarchy = { git = "https://github.com/bevyengine/bevy", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
+variadics_please = "1.1.0"
 disqualified = "1.0"
 
 [lints]

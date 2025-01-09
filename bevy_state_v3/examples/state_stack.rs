@@ -110,9 +110,9 @@ impl<S> Command for StackOpCommand<S>
 where
     S: State<Repr = Option<S>, Update = StackUpdate<S>>,
 {
-    fn apply(self, world: &mut World) {
+    fn apply(self, world: &mut World) -> Result {
         let Some(entity) = state_target_entity(world, self.local) else {
-            return;
+            return Ok(());
         };
         let mut entity = world.entity_mut(entity);
         let Some(mut state_data) = entity.get_mut::<StateData<S>>() else {
@@ -120,9 +120,10 @@ where
                 "Missing state data component for {}.",
                 disqualified::ShortName::of::<S>()
             );
-            return;
+            return Ok(());
         };
         state_data.update_mut().op = Some(self.op);
+        Ok(())
     }
 }
 

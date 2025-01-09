@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 
 use bevy_ecs::{
-    component::{Component, ComponentId, Components, RequiredComponents, StorageType},
+    component::{Component, ComponentId, Components, Mutable, RequiredComponents, StorageType},
     storage::Storages,
 };
 #[cfg(feature = "bevy_reflect")]
@@ -57,12 +57,15 @@ where
 impl<S: State> Component for StateData<S> {
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
+    type Mutability = Mutable;
+
     fn register_required_components(
         component_id: ComponentId,
         components: &mut Components,
         storages: &mut Storages,
         required_components: &mut RequiredComponents,
         inheritance_depth: u16,
+        _recursion_check_stack: &mut Vec<ComponentId>,
     ) {
         <S::Dependencies as StateSet>::register_required_components(
             component_id,

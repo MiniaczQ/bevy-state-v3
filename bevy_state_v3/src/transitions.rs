@@ -22,7 +22,7 @@ pub fn on_init_transition<S: State>(
     mut commands: Commands,
     query: Query<(&StateData<S>, Has<GlobalMarker>)>,
 ) {
-    let entity = trigger.entity();
+    let entity = trigger.target();
     let (state, is_global) = query.get(entity).unwrap();
     let event = OnInit::<S>(state.current().clone());
     if is_global {
@@ -42,7 +42,7 @@ pub fn on_deinit_transition<S: State>(
     mut commands: Commands,
     query: Query<(&StateData<S>, Has<GlobalMarker>)>,
 ) {
-    let entity = trigger.entity();
+    let entity = trigger.target();
     let (state, is_global) = query.get(entity).unwrap();
     let event = OnDeinit::<S>(state.current().clone());
     if is_global {

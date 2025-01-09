@@ -91,10 +91,12 @@ const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
 /// On each bounce the color changes.
 fn move_logo(
     mut logo: Single<(&mut Transform, &mut Velocity, &mut Sprite)>,
-    camera: Single<&OrthographicProjection>,
+    camera: Single<&Projection>,
     time: Res<Time>,
 ) {
-    let camera = camera;
+    let Projection::Orthographic(camera) = &*camera else {
+        return;
+    };
     let (transform, velocity, sprite) = &mut *logo;
     let delta = time.delta_secs();
 

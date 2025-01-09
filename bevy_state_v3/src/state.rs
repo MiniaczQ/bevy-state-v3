@@ -8,7 +8,7 @@ use bevy_ecs::{
     system::Populated,
     world::World,
 };
-use bevy_utils::tracing::warn;
+use bevy_log::warn;
 
 use crate::{
     components::{RegisteredState, StateData},
@@ -87,7 +87,6 @@ use crate::{
 ///     // All other trait members have default implementations and it's not recommended to modify them.
 /// }
 /// ```
-
 pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
     /// Dependencies for this state.
     /// Any update in dependencies will result in update of this state.

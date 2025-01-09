@@ -359,7 +359,7 @@ fn look_to(transform: &mut Transform, target: Vec3) {
 
 /// Change enemy color based on their state.
 fn update_color(trigger: Trigger<OnEnter<Behavior>>, mut query: Populated<&mut Sprite>) {
-    let entity = trigger.entity();
+    let entity = trigger.target();
     let mut sprite = query.get_mut(entity).unwrap();
     match trigger.0 {
         Behavior::Lookout => sprite.color = RED_300.into(),

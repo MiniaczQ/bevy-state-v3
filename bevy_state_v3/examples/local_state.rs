@@ -112,10 +112,12 @@ fn bounce_around(
         ),
         With<Sprite>,
     >,
-    camera: Single<&OrthographicProjection>,
+    camera: Single<&Projection>,
     time: Res<Time>,
 ) {
-    let camera = camera;
+    let Projection::Orthographic(camera) = &*camera else {
+        return;
+    };
     let delta = time.delta_secs();
     for (state, mut sprite, mut transform, mut velocity) in logos.iter_mut() {
         // Ignore logos which are in the disabled state.

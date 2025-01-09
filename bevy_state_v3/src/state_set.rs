@@ -6,7 +6,7 @@ use bevy_ecs::{
     query::{QueryData, WorldQuery},
     storage::Storages,
 };
-use bevy_utils::all_tuples;
+use variadics_please::all_tuples;
 
 use crate::{components::StateData, state::State};
 
