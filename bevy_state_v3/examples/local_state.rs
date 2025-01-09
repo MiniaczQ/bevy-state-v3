@@ -70,7 +70,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 ..default()
             },
             Transform::from_xyz(100.0, 0.0, 0.),
-            Velocity(Vec2::splat(3.0)),
+            Velocity(Vec2::splat(300.0)),
             ToggleOn(KeyCode::Digit1),
         ))
         .id();
@@ -87,7 +87,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ..default()
         },
         Transform::from_xyz(-100.0, 0.0, 0.0),
-        Velocity(Vec2::splat(-2.0)),
+        Velocity(Vec2::splat(-250.0)),
         ToggleOn(KeyCode::Digit2),
         // This time we add the state directly, by hand.
         LogoState::Enabled.into_data(),
@@ -113,15 +113,17 @@ fn bounce_around(
         With<Sprite>,
     >,
     camera: Single<&OrthographicProjection>,
+    time: Res<Time>,
 ) {
     let camera = camera;
+    let delta = time.delta_secs();
     for (state, mut sprite, mut transform, mut velocity) in logos.iter_mut() {
         // Ignore logos which are in the disabled state.
         if *state.current() == LogoState::Disabled {
             continue;
         }
 
-        transform.translation += velocity.0.extend(0.);
+        transform.translation += velocity.0.extend(0.) * delta;
 
         let logo_pos = transform.translation.xy();
 

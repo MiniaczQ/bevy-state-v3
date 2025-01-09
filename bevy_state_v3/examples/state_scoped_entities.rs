@@ -97,7 +97,7 @@ fn spawn_logos(
             ..default()
         },
         Transform::from_xyz(0.0, 0.0, 0.0),
-        Velocity(Vec2::from(angle.to_radians().sin_cos()) * 3.0),
+        Velocity(Vec2::from(angle.to_radians().sin_cos()) * 300.0),
         StateScoped::<MyState>(MyState::Existing),
     ));
     *index += 1;
@@ -107,10 +107,12 @@ fn spawn_logos(
 fn bounce_around(
     mut logos: Populated<(&mut Sprite, &mut Transform, &mut Velocity), With<Sprite>>,
     camera: Single<&OrthographicProjection>,
+    time: Res<Time>,
 ) {
     let camera = camera;
+    let delta = time.delta_secs();
     for (mut sprite, mut transform, mut velocity) in logos.iter_mut() {
-        transform.translation += velocity.0.extend(0.);
+        transform.translation += velocity.0.extend(0.) * delta;
 
         let logo_pos = transform.translation.xy();
 

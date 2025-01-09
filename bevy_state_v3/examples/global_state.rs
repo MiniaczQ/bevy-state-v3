@@ -75,7 +75,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             anchor: Anchor::Center,
             ..default()
         },
-        Velocity(Vec2::splat(5.0)),
+        Velocity(Vec2::splat(300.0)),
     ));
 }
 
@@ -92,11 +92,13 @@ const LOGO_HALF_SIZE: Vec2 = Vec2::new(260., 65.);
 fn move_logo(
     mut logo: Single<(&mut Transform, &mut Velocity, &mut Sprite)>,
     camera: Single<&OrthographicProjection>,
+    time: Res<Time>,
 ) {
     let camera = camera;
     let (transform, velocity, sprite) = &mut *logo;
+    let delta = time.delta_secs();
 
-    transform.translation += velocity.0.extend(0.);
+    transform.translation += velocity.0.extend(0.) * delta;
 
     let logo_pos = transform.translation.xy();
 
