@@ -5,7 +5,6 @@ use bevy_ecs::{
     entity::Entity,
     system::{Commands, Populated},
 };
-use bevy_hierarchy::DespawnRecursiveExt;
 
 use crate::{
     prelude::StateData,
@@ -28,7 +27,7 @@ pub fn despawn_state_scoped<S: State>(
     };
     for (entity, scope) in query.iter() {
         if &scope.0 == exited {
-            commands.entity(entity).try_despawn_recursive();
+            commands.entity(entity).despawn();
         }
     }
 }

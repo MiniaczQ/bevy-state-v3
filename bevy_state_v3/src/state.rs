@@ -4,7 +4,7 @@ use core::fmt::Debug;
 
 use bevy_ecs::{
     query::{QuerySingleError, With},
-    schedule::{IntoSystemConfigs, Schedules},
+    schedule::{IntoScheduleConfigs, Schedules},
     system::Populated,
     world::World,
 };
@@ -127,7 +127,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
 
         match world
             .query_filtered::<(), With<RegisteredState<Self>>>()
-            .get_single(world)
+            .single(world)
         {
             Ok(_) => {
                 warn!(
@@ -151,6 +151,7 @@ pub trait State: Sized + Clone + Debug + PartialEq + Send + Sync + 'static {
         let mut schedules = world.resource_mut::<Schedules>();
         let schedule = schedules.entry(StateUpdates);
         schedule.configure_sets(StateSystemSet::configuration::<Self>());
+
         schedule
             .add_systems(Self::update_state_data_system.in_set(StateSystemSet::update::<Self>()));
 

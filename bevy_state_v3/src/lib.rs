@@ -22,13 +22,13 @@ pub mod prelude {
     pub use crate::components::StateData;
     pub use crate::config::StateConfig;
     pub use crate::state::{State, StateRepr, StateUpdate};
-    pub use crate::state_scoped::{despawn_state_scoped, StateScoped};
+    pub use crate::state_scoped::{StateScoped, despawn_state_scoped};
     pub use crate::state_set::{StateSet, StateSetData};
     pub use crate::transitions::{
-        on_enter_transition, on_exit_transition, on_reenter_transition, on_reexit_transition,
-        OnEnter, OnExit, OnInit, OnReenter, OnReexit,
+        OnEnter, OnExit, OnInit, OnReenter, OnReexit, on_enter_transition, on_exit_transition,
+        on_reenter_transition, on_reexit_transition,
     };
-    pub use crate::util::{in_state, state_changed, state_changed_to, Global};
+    pub use crate::util::{Global, in_state, state_changed, state_changed_to};
 
     pub use bevy_state_macros::State;
 }
@@ -38,12 +38,8 @@ mod tests {
     use std::{any::type_name, fmt::Debug};
 
     use bevy_ecs::{
-        entity::Entity,
-        event::Event,
-        observer::Trigger,
-        schedule::Schedules,
-        system::{ResMut, Resource},
-        world::World,
+        entity::Entity, event::Event, observer::On, resource::Resource, schedule::Schedules,
+        system::ResMut, world::World,
     };
     use bevy_state_macros::State;
 
@@ -94,7 +90,7 @@ mod tests {
 
     macro_rules! assert_states {
         ($world:expr, $(($ty:ident, $state:expr)),* $(,)*) => {
-            $(assert_eq!($world.query::<&StateData<$ty>>().single($world).current, $state));*
+            $(assert_eq!($world.query::<&StateData<$ty>>().single($world).unwrap().current, $state));*
         };
     }
 
@@ -151,8 +147,8 @@ mod tests {
     #[derive(Default, Resource)]
     struct StateTransitionTracker(Vec<&'static str>);
 
-    fn track<E: Event>() -> impl Fn(Trigger<E>, ResMut<StateTransitionTracker>) {
-        move |_: Trigger<E>, mut reg: ResMut<StateTransitionTracker>| {
+    fn track<E: Event>() -> impl Fn(On<E>, ResMut<StateTransitionTracker>) {
+        move |_: On<E>, mut reg: ResMut<StateTransitionTracker>| {
             reg.0.push(type_name::<E>());
         }
     }

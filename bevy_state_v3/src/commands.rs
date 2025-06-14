@@ -24,19 +24,21 @@ impl<S: State> InitializeStateCommand<S> {
     }
 }
 
-impl<S: State + Send + Sync + 'static> Command for InitializeStateCommand<S> {
+impl<S: State + Send + Sync + 'static> Command<Result> for InitializeStateCommand<S> {
     fn apply(self, world: &mut World) -> Result {
         let entity = match self.local {
             Some(entity) => entity,
             None => {
                 let result = world
                     .query_filtered::<Entity, With<GlobalMarker>>()
-                    .get_single(world);
+                    .single(world);
                 match result {
                     Ok(entity) => entity,
                     Err(QuerySingleError::NoEntities(_)) => world.spawn(GlobalMarker).id(),
                     Err(QuerySingleError::MultipleEntities(_)) => {
-                        warn!("Insert global state command failed, multiple entities have the `GlobalStateMarker` component.");
+                        warn!(
+                            "Insert global state command failed, multiple entities have the `GlobalStateMarker` component."
+                        );
                         return Ok(());
                     }
                 }
@@ -86,7 +88,7 @@ pub fn state_target_entity(world: &mut World, local: Option<Entity>) -> Option<E
         None => {
             match world
                 .query_filtered::<Entity, With<GlobalMarker>>()
-                .get_single(world)
+                .single(world)
             {
                 Err(QuerySingleError::NoEntities(_)) => {
                     warn!("No global state entity exists.");
@@ -102,7 +104,7 @@ pub fn state_target_entity(world: &mut World, local: Option<Entity>) -> Option<E
     }
 }
 
-impl<S: IntoStateUpdate> Command for WakeStateTargetCommand<S> {
+impl<S: IntoStateUpdate> Command<Result> for WakeStateTargetCommand<S> {
     fn apply(self, world: &mut World) -> Result {
         let Some(entity) = state_target_entity(world, self.local) else {
             return Ok(());

@@ -1,7 +1,7 @@
 //! State configuration during registration.
 
 use bevy_ecs::{
-    schedule::{IntoSystemConfigs, Schedules},
+    schedule::{IntoScheduleConfigs, Schedules},
     world::World,
 };
 

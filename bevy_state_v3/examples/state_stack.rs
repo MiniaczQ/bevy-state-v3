@@ -110,9 +110,9 @@ impl<S> Command for StackOpCommand<S>
 where
     S: State<Repr = Option<S>, Update = StackUpdate<S>>,
 {
-    fn apply(self, world: &mut World) -> Result {
+    fn apply(self, world: &mut World) {
         let Some(entity) = state_target_entity(world, self.local) else {
-            return Ok(());
+            return;
         };
         let mut entity = world.entity_mut(entity);
         let Some(mut state_data) = entity.get_mut::<StateData<S>>() else {
@@ -120,10 +120,9 @@ where
                 "Missing state data component for {}.",
                 disqualified::ShortName::of::<S>()
             );
-            return Ok(());
+            return;
         };
         state_data.update_mut().op = Some(self.op);
-        Ok(())
     }
 }
 
@@ -187,7 +186,7 @@ fn setup(mut commands: Commands) {
         })
         .with_child((
             Text::new(""),
-            TextLayout::new_with_justify(JustifyText::Center),
+            TextLayout::new_with_justify(Justify::Center),
             StateLabel,
         ));
 }
@@ -220,7 +219,7 @@ fn user_input(mut commands: Commands, input: Res<ButtonInput<KeyCode>>) {
 /// Note that only the top of the stack is the current state.
 /// We display the rest of the stack for clarity.
 fn update_text(
-    _: Trigger<OnReenter<MyState>>,
+    _: On<OnReenter<MyState>>,
     state: Single<&StateData<MyState>>,
     mut text: Single<&mut Text, With<StateLabel>>,
 ) {

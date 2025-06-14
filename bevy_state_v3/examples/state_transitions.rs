@@ -64,7 +64,7 @@ struct TransitionLog(Vec<String>);
 /// The setup here is an observer instead of a system.
 /// This is to ensure that everything is spawned for initial
 /// system transitions, which run before [`Startup`] schedule.
-fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
+fn setup(_: On<OnInit<MyState>>, mut commands: Commands) {
     println!();
     println!("Press 1-4 to change state.");
     println!();
@@ -84,16 +84,13 @@ fn setup(_: Trigger<OnInit<MyState>>, mut commands: Commands) {
         })
         .with_child((
             Text::new(""),
-            TextLayout::new_with_justify(JustifyText::Center),
+            TextLayout::new_with_justify(Justify::Center),
             TransitionLog(vec![]),
         ));
 }
 
 /// Observer that gets triggered on every non-reentrant [`MyState`] transition in the enter order.
-fn on_enter(
-    trigger: Trigger<OnEnter<MyState>>,
-    mut label: Single<(&mut Text, &mut TransitionLog)>,
-) {
+fn on_enter(trigger: On<OnEnter<MyState>>, mut label: Single<(&mut Text, &mut TransitionLog)>) {
     let (text, log) = &mut *label;
     let transition = format!("Entered {:?}", trigger.0);
     update_log(log, text, transition);
@@ -101,7 +98,7 @@ fn on_enter(
 
 /// Observer that gets triggered on every [`MyState`] transition in the exit order.
 fn on_reexit(
-    trigger: Trigger<OnReexit<MyState>>,
+    trigger: On<OnReexit<MyState>>,
     state: Single<&StateData<MyState>>,
     mut label: Single<(&mut Text, &mut TransitionLog)>,
 ) {

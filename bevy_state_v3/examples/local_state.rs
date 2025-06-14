@@ -63,10 +63,10 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let texture = assets.load("branding/bevy_logo_dark.png");
     let entity = commands
         .spawn((
+            Anchor::CENTER,
             Sprite {
                 image: texture,
                 color: Color::oklch(0.5, 0.5, 0.0),
-                anchor: Anchor::Center,
                 ..default()
             },
             Transform::from_xyz(100.0, 0.0, 0.),
@@ -80,10 +80,10 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     // Create another logo with random position and velocity.
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
+        Anchor::CENTER,
         Sprite {
             image: texture,
             color: Color::oklch(0.5, 0.5, 180.0),
-            anchor: Anchor::Center,
             ..default()
         },
         Transform::from_xyz(-100.0, 0.0, 0.0),
