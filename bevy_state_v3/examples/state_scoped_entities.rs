@@ -81,7 +81,7 @@ fn spawn_logos(
     let timer = timer.get_or_insert_with(|| Timer::from_seconds(0.3, TimerMode::Repeating));
     timer.tick(time.delta());
 
-    if !timer.finished() {
+    if !timer.is_finished() {
         return;
     }
 
@@ -90,10 +90,10 @@ fn spawn_logos(
     let angle = t * 137.507764;
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
+        Anchor::CENTER,
         Sprite {
             image: texture,
             color: Color::oklch(0.5, 0.5, angle),
-            anchor: Anchor::Center,
             ..default()
         },
         Transform::from_xyz(0.0, 0.0, 0.0),

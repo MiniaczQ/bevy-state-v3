@@ -156,9 +156,9 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         Sprite {
             image: texture.clone(),
             color: BLUE_300.into(),
-            anchor: Anchor::Center,
             ..default()
         },
+        Anchor::CENTER,
         Transform::from_xyz(0.0, 200.0, 0.0),
         Player,
     ));
@@ -171,9 +171,9 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             Sprite {
                 image: texture.clone(),
                 color: RED_300.into(),
-                anchor: Anchor::Center,
                 ..default()
             },
+            Anchor::CENTER,
             Transform::from_xyz(x, -200.0, 0.0),
             Enemy,
             Vision::new(30.0, 400.0),
@@ -358,8 +358,8 @@ fn look_to(transform: &mut Transform, target: Vec3) {
 }
 
 /// Change enemy color based on their state.
-fn update_color(trigger: Trigger<OnEnter<Behavior>>, mut query: Populated<&mut Sprite>) {
-    let entity = trigger.target();
+fn update_color(trigger: On<OnEnter<Behavior>>, mut query: Populated<&mut Sprite>) {
+    let entity = trigger.target().unwrap();
     let mut sprite = query.get_mut(entity).unwrap();
     match trigger.0 {
         Behavior::Lookout => sprite.color = RED_300.into(),

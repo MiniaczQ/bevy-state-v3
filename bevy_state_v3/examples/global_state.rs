@@ -69,10 +69,10 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     // Create logo with random position and velocity.
     let texture = assets.load("branding/bevy_logo_dark.png");
     commands.spawn((
+        Anchor::CENTER,
         Sprite {
             image: texture,
             color: Color::oklch(0.5, 0.5, 0.0),
-            anchor: Anchor::Center,
             ..default()
         },
         Velocity(Vec2::splat(300.0)),

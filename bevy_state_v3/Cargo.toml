@@ -1,7 +1,7 @@
 [package]
 name = "bevy_state_v3"
 version = "0.16.0-dev"
-edition = "2021"
+edition = "2024"
 description = "Finite state machines for Bevy"
 homepage = "https://bevyengine.org"
 repository = "https://github.com/bevyengine/bevy"
@@ -11,10 +11,9 @@ keywords = ["bevy"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["bevy_reflect", "bevy_app", "bevy_hierarchy"]
+default = ["bevy_reflect", "bevy_app"]
 bevy_reflect = ["dep:bevy_reflect", "bevy_ecs/bevy_reflect"]
 bevy_app = ["dep:bevy_app"]
-bevy_hierarchy = ["dep:bevy_hierarchy"]
 serialize = ["serde"]
 
 [dependencies]
@@ -24,7 +23,6 @@ bevy_state_macros = { path = "macros", version = "0.16.0-dev" }
 bevy_log = { git = "https://github.com/bevyengine/bevy" }
 bevy_reflect = { git = "https://github.com/bevyengine/bevy", optional = true }
 bevy_app = { git = "https://github.com/bevyengine/bevy", optional = true }
-bevy_hierarchy = { git = "https://github.com/bevyengine/bevy", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 variadics_please = "1.1.0"
 disqualified = "1.0"
@@ -38,33 +36,45 @@ all-features = true
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", default-features = false, features = [
+    "std",
+    "async_executor",
+    "android-game-activity",
+    "android_shared_stdcxx",
     "animation",
     "bevy_asset",
     "bevy_audio",
     "bevy_color",
-    "bevy_gilrs",
-    "bevy_scene",
-    "bevy_winit",
     "bevy_core_pipeline",
+    "bevy_core_widgets",
+    "bevy_anti_aliasing",
+    "bevy_gilrs",
+    "bevy_gizmos",
+    "bevy_gltf",
+    "bevy_input_focus",
+    "bevy_log",
+    "bevy_mesh_picking_backend",
     "bevy_pbr",
     "bevy_picking",
-    "bevy_gltf",
     "bevy_render",
+    "bevy_scene",
     "bevy_sprite",
+    "bevy_sprite_picking_backend",
     "bevy_text",
     "bevy_ui",
+    "bevy_ui_picking_backend",
+    "bevy_window",
+    "bevy_winit",
+    "custom_cursor",
+    "default_font",
+    "hdr",
     "multi_threaded",
     "png",
-    "hdr",
-    "vorbis",
-    "x11",
-    "bevy_gizmos",
-    "android_shared_stdcxx",
-    "tonemapping_luts",
     "smaa_luts",
-    "default_font",
-    "webgl2",
     "sysinfo_plugin",
+    "tonemapping_luts",
+    "vorbis",
+    "webgl2",
+    "x11",
 ] }
 
 [[example]]
@@ -148,6 +158,7 @@ wasm = false
 name = "behavior_tree"
 path = "examples/behavior_tree.rs"
 doc-scrape-examples = true
+required-features = ["bevy/bevy_picking"]
 
 [package.metadata.example.behavior_tree]
 name = "Behavior tree"

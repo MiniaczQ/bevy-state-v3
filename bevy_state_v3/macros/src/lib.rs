@@ -8,8 +8,8 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, spanned::Spanned, DeriveInput, Ident, ImplGenerics, Pat, Path, Result,
-    TypeGenerics, WhereClause,
+    DeriveInput, Ident, ImplGenerics, Pat, Path, Result, TypeGenerics, WhereClause,
+    parse_macro_input, spanned::Spanned,
 };
 
 pub(crate) fn bevy_state_path() -> Path {

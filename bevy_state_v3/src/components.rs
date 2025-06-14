@@ -2,9 +2,8 @@
 
 use std::marker::PhantomData;
 
-use bevy_ecs::{
-    component::{Component, ComponentId, Components, Mutable, RequiredComponents, StorageType},
-    storage::Storages,
+use bevy_ecs::component::{
+    Component, ComponentId, ComponentsRegistrator, Mutable, RequiredComponents, StorageType,
 };
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::prelude::*;
@@ -61,8 +60,7 @@ impl<S: State> Component for StateData<S> {
 
     fn register_required_components(
         component_id: ComponentId,
-        components: &mut Components,
-        storages: &mut Storages,
+        components: &mut ComponentsRegistrator,
         required_components: &mut RequiredComponents,
         inheritance_depth: u16,
         _recursion_check_stack: &mut Vec<ComponentId>,
@@ -70,7 +68,6 @@ impl<S: State> Component for StateData<S> {
         <S::Dependencies as StateSet>::register_required_components(
             component_id,
             components,
-            storages,
             required_components,
             inheritance_depth,
         );

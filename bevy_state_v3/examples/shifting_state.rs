@@ -136,9 +136,9 @@ where
     S: State<Update = ShiftUpdate<S>>,
     S::Repr: Variants,
 {
-    fn apply(self, world: &mut World) -> Result {
+    fn apply(self, world: &mut World) {
         let Some(entity) = state_target_entity(world, self.local) else {
-            return Ok(());
+            return;
         };
         let mut entity = world.entity_mut(entity);
         let Some(mut state_data) = entity.get_mut::<StateData<S>>() else {
@@ -146,10 +146,9 @@ where
                 "Missing state data component for {}.",
                 disqualified::ShortName::of::<S>()
             );
-            return Ok(());
+            return;
         };
         state_data.update_mut().op = Some(self.op);
-        Ok(())
     }
 }
 
@@ -214,7 +213,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn observer_on_reenter(
-    trigger: Trigger<OnReenter<MyState>>,
+    trigger: On<OnReenter<MyState>>,
     mut text: Single<&mut Text, With<StateLabel>>,
 ) {
     text.0 = format!("{:?}", trigger.0);

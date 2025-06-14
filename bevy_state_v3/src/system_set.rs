@@ -1,6 +1,8 @@
 //! System set for scheduling state transitions.
 
-use bevy_ecs::schedule::{IntoSystemSetConfigs, ScheduleLabel, SystemSet};
+use bevy_ecs::schedule::{
+    InternedSystemSet, IntoScheduleConfigs, ScheduleConfigs, ScheduleLabel, SystemSet,
+};
 
 use crate::state::State;
 
@@ -46,18 +48,21 @@ impl StateSystemSet {
     }
 
     /// Returns system set configuration for this set.
-    pub fn configuration<S: State>() -> impl IntoSystemSetConfigs {
+    pub fn configuration<S: State>() -> ScheduleConfigs<InternedSystemSet> {
         (
             (Self::AllUpdates, Self::AllExits, Self::AllEnters).chain(),
-            Self::update::<S>()
-                .after(Self::Update(S::ORDER - 1))
-                .in_set(Self::AllUpdates),
-            Self::exit::<S>()
-                .before(Self::Exit(S::ORDER - 1))
-                .in_set(Self::AllExits),
-            Self::enter::<S>()
-                .after(Self::Enter(S::ORDER - 1))
-                .in_set(Self::AllEnters),
+            (
+                Self::update::<S>()
+                    .after(Self::Update(S::ORDER - 1))
+                    .in_set(Self::AllUpdates),
+                Self::exit::<S>()
+                    .before(Self::Exit(S::ORDER - 1))
+                    .in_set(Self::AllExits),
+                Self::enter::<S>()
+                    .after(Self::Enter(S::ORDER - 1))
+                    .in_set(Self::AllEnters),
+            ),
         )
+            .into_configs()
     }
 }

@@ -1,5 +1,6 @@
 [workspace]
 members = ["bevy_state_v3"]
+edition = "2024"
 
 [workspace.lints.clippy]
 doc_markdown = "warn"

@@ -4,10 +4,10 @@ use bevy_derive::Deref;
 use bevy_ecs::{
     entity::Entity,
     event::Event,
-    observer::Trigger,
+    lifecycle::{Add, Remove},
+    observer::On,
     query::Has,
     system::{Commands, Populated, Query},
-    world::{OnAdd, OnRemove},
 };
 
 use crate::{components::StateData, state::State, util::GlobalMarker};
@@ -18,11 +18,11 @@ pub struct OnInit<S: State>(pub S::Repr);
 
 /// Observer that emits state [`OnInit`] event.
 pub fn on_init_transition<S: State>(
-    trigger: Trigger<OnAdd, StateData<S>>,
+    trigger: On<Add, StateData<S>>,
     mut commands: Commands,
     query: Query<(&StateData<S>, Has<GlobalMarker>)>,
 ) {
-    let entity = trigger.target();
+    let entity = trigger.target().unwrap();
     let (state, is_global) = query.get(entity).unwrap();
     let event = OnInit::<S>(state.current().clone());
     if is_global {
@@ -38,11 +38,11 @@ pub struct OnDeinit<S: State>(pub S::Repr);
 
 /// Observer that emits state [`OnDeinit`] event.
 pub fn on_deinit_transition<S: State>(
-    trigger: Trigger<OnRemove, StateData<S>>,
+    trigger: On<Remove, StateData<S>>,
     mut commands: Commands,
     query: Query<(&StateData<S>, Has<GlobalMarker>)>,
 ) {
-    let entity = trigger.target();
+    let entity = trigger.target().unwrap();
     let (state, is_global) = query.get(entity).unwrap();
     let event = OnDeinit::<S>(state.current().clone());
     if is_global {
